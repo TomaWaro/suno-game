@@ -113,7 +113,7 @@ function PlayLobbyContent() {
           }
           if (state.phase === 'GUESSING' && submittedVote) {
             // Keep guess form cleared for next round if state changes
-            const userVoteSubmitted = state.votes.some((v: any) => v.voter === nickname);
+            const userVoteSubmitted = state.votes.some((v: any) => v.voter === nickname && v.roundIdx === state.currentRoundIdx);
             if (!userVoteSubmitted) {
               setSubmittedVote(false);
               setCreatorGuess('');
@@ -304,7 +304,13 @@ function PlayLobbyContent() {
                             key={idx}
                             type="button"
                             onClick={() => setCreatorGuess(name)}
-                            className={`p-3 rounded-xl border text-sm font-semibold text-white transition-all ${creatorGuess === name ? 'border-[hsl(var(--primary))] bg-[hsla(var(--primary),0.1)]' : 'border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)]'}`}
+                            className="p-3 rounded-xl border text-sm font-semibold transition-all"
+                            style={{
+                              borderColor: creatorGuess === name ? 'hsl(330, 100%, 50%)' : 'rgba(255,255,255,0.1)',
+                              backgroundColor: creatorGuess === name ? 'rgba(236, 72, 153, 0.25)' : 'rgba(255,255,255,0.03)',
+                              color: creatorGuess === name ? '#ffffff' : 'rgba(255,255,255,0.6)',
+                              boxShadow: creatorGuess === name ? '0 0 15px rgba(236, 72, 153, 0.4)' : 'none'
+                            }}
                           >
                             {name}
                           </button>
@@ -318,19 +324,25 @@ function PlayLobbyContent() {
                   <label className="text-xs text-[rgba(255,255,255,0.5)] uppercase tracking-wider mb-1">
                     Note du morceau
                   </label>
-                  <div className="flex justify-center items-center gap-2">
+                  <div className="flex justify-center items-center gap-1">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
                         key={star}
                         type="button"
                         onClick={() => setSongRating(star)}
-                        className={`text-5xl px-2 py-2 transition-all transform active:scale-125 ${
-                          songRating >= star
-                            ? 'text-amber-400 drop-shadow-[0_0_10px_rgba(245,158,11,0.7)] scale-110 font-bold'
-                            : 'text-white/10'
-                        }`}
+                        className="p-2 transition-all transform active:scale-125"
                       >
-                        ★
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill={songRating >= star ? '#fbbf24' : 'rgba(255,255,255,0.15)'}
+                          className="w-12 h-12"
+                          style={{
+                            filter: songRating >= star ? 'drop-shadow(0 0 8px rgba(251,191,36,0.6))' : 'none'
+                          }}
+                        >
+                          <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                        </svg>
                       </button>
                     ))}
                   </div>
