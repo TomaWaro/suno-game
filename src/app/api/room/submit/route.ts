@@ -19,7 +19,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
 
-    const embedUrl = parseSunoUrl(sunoUrl);
+    let resolvedUrl = sunoUrl;
+    
+    // Resolve short suno.com/s/ share links
+    if (sunoUrl.includes('/s/')) {
+      try {
+        const res = await fetch(sunoUrl, { method: 'HEAD', redirect: 'follow' });
+        resolvedUrl = res.url;
+      } catch (e) {
+        console.error('Failed to resolve Suno short link:', e);
+      }
+    }
+
+    const embedUrl = parseSunoUrl(resolvedUrl);
     if (!embedUrl) {
       return NextResponse.json({ error: 'Lien Suno invalide' }, { status: 400 });
     }
