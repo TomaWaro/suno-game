@@ -50,7 +50,8 @@ export async function POST(request: Request) {
 
     await kv.set(roomKey, state);
     return NextResponse.json(state);
-  } catch (e) {
-    return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+  } catch (e: any) {
+    console.error('Submit API Error:', e);
+    return NextResponse.json({ error: e.message || 'Invalid payload' }, { status: 400 });
   }
 }

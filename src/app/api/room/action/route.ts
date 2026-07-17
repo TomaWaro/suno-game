@@ -60,7 +60,8 @@ export async function POST(request: Request) {
 
     await kv.set(roomKey, state, { ex: 7200 }); // Reset room TTL to 2 hours
     return NextResponse.json(state);
-  } catch (e) {
-    return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+  } catch (e: any) {
+    console.error('Action API Error:', e);
+    return NextResponse.json({ error: e.message || 'Invalid payload' }, { status: 400 });
   }
 }
