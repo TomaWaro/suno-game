@@ -21,6 +21,7 @@ function PlayLobbyContent() {
   const [songTitle, setSongTitle] = useState<string>('');
   const [readyPlayers, setReadyPlayers] = useState<string[]>([]);
   const [currentRoundIdx, setCurrentRoundIdx] = useState<number>(0);
+  const [serverVotes, setServerVotes] = useState<any[]>([]);
   
   // Form submissions
   const [songUrl, setSongUrl] = useState<string>('');
@@ -49,6 +50,41 @@ function PlayLobbyContent() {
       if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
     };
   }, []);
+
+  // Sync and reset song form when phase changes to SUBMISSION
+  useEffect(() => {
+    if (phase === 'SUBMISSION' && !readyPlayers.includes(nickname)) {
+      setSubmittedSong(false);
+      setSongUrl('');
+      setSongTitle('');
+    }
+  }, [phase]);
+
+  // Auto-lock song form if server says we already submitted
+  useEffect(() => {
+    if (phase === 'SUBMISSION' && readyPlayers.includes(nickname)) {
+      setSubmittedSong(true);
+    }
+  }, [readyPlayers, phase, nickname]);
+
+  // Reset vote form precisely when the round index changes
+  useEffect(() => {
+    setSubmittedVote(false);
+    setCreatorGuess('');
+    setSongRating(0);
+  }, [currentRoundIdx]);
+
+  // Auto-lock vote form if server says we already voted for this round
+  useEffect(() => {
+    if (phase === 'GUESSING') {
+      const userVoteSubmitted = serverVotes.some(
+        (v: any) => v.voter === nickname && v.roundIdx === currentRoundIdx
+      );
+      if (userVoteSubmitted) {
+        setSubmittedVote(true);
+      }
+    }
+  }, [serverVotes, currentRoundIdx, phase, nickname]);
 
   // Handle room joining
   const handleJoin = async (e: React.FormEvent) => {
@@ -88,6 +124,7 @@ function PlayLobbyContent() {
           setTheme(state.theme);
           setPlayersList(state.players || []);
           setReadyPlayers(state.readyPlayers || []);
+          setServerVotes(state.votes || []);
           
           if (state.currentRoundIdx !== undefined) {
             setCurrentRoundIdx(state.currentRoundIdx);
@@ -102,23 +139,6 @@ function PlayLobbyContent() {
           
           if (state.currentSongCreator) {
             setSongCreatorExclusion(state.currentSongCreator);
-          }
-
-          // Reset client form states on phase transition events
-          // (Normally detected when the phase transitions on server)
-          if (state.phase === 'SUBMISSION' && submittedSong && !state.readyPlayers.includes(nickname)) {
-            setSubmittedSong(false);
-            setSongUrl('');
-            setSongTitle('');
-          }
-          if (state.phase === 'GUESSING' && submittedVote) {
-            // Keep guess form cleared for next round if state changes
-            const userVoteSubmitted = state.votes.some((v: any) => v.voter === nickname && v.roundIdx === state.currentRoundIdx);
-            if (!userVoteSubmitted) {
-              setSubmittedVote(false);
-              setCreatorGuess('');
-              setSongRating(0);
-            }
           }
         } catch (err) {
           console.error('State polling error:', err);
