@@ -46,9 +46,7 @@ loadMockData();
 const isVercel = process.env.VERCEL === '1';
 const isProdKV = !!process.env.KV_REST_API_URL;
 
-if (!isProdKV && isVercel) {
-  console.error('ERROR: Running on Vercel but KV_REST_API_URL environment variable is missing! Please link a Vercel KV storage database in the project dashboard.');
-}
+
 
 const mockKv = {
   async get<T>(key: string): Promise<T | null> {
