@@ -32,19 +32,35 @@ function saveMockData() {
 // Initial load
 loadMockData();
 
+const isVercel = process.env.VERCEL === '1';
+const isProdKV = !!process.env.KV_REST_API_URL;
+
+if (!isProdKV && isVercel) {
+  console.error('ERROR: Running on Vercel but KV_REST_API_URL environment variable is missing! Please link a Vercel KV storage database in the project dashboard.');
+}
+
 const mockKv = {
   async get<T>(key: string): Promise<T | null> {
+    if (isVercel) {
+      throw new Error('Vercel KV is not configured. Please link a Vercel KV / Redis database in your project Storage tab.');
+    }
     loadMockData();
     const val = inMemoryStore[key];
     if (val === undefined) return null;
     return val as T;
   },
   async set(key: string, value: any, options?: { ex?: number }): Promise<'OK'> {
+    if (isVercel) {
+      throw new Error('Vercel KV is not configured. Please link a Vercel KV / Redis database in your project Storage tab.');
+    }
     inMemoryStore[key] = value;
     saveMockData();
     return 'OK';
   },
   async del(key: string): Promise<number> {
+    if (isVercel) {
+      throw new Error('Vercel KV is not configured. Please link a Vercel KV / Redis database in your project Storage tab.');
+    }
     loadMockData();
     if (key in inMemoryStore) {
       delete inMemoryStore[key];
@@ -55,9 +71,7 @@ const mockKv = {
   }
 };
 
-const isProdKV = !!process.env.KV_REST_API_URL;
-
-if (!isProdKV) {
+if (!isProdKV && !isVercel) {
   console.log('Vercel KV credentials not found. Falling back to local filesystem mock KV storage.');
 }
 

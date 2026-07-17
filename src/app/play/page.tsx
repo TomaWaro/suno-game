@@ -32,6 +32,7 @@ function PlayLobbyContent() {
   const [songCreatorExclusion, setSongCreatorExclusion] = useState<string>('');
 
   const pollingIntervalRef = useRef<any>(null);
+  const isUpdatingRef = useRef<boolean>(false);
 
   // Parse room query parameter on load
   useEffect(() => {
@@ -75,6 +76,7 @@ function PlayLobbyContent() {
 
       // Start polling state
       pollingIntervalRef.current = setInterval(async () => {
+        if (isUpdatingRef.current) return;
         try {
           const stateRes = await fetch(`/api/room/state?room=${roomCode}`);
           if (!stateRes.ok) return;
@@ -127,7 +129,7 @@ function PlayLobbyContent() {
   // Submit Suno URL anonymously
   const submitSong = async () => {
     if (!songUrl) return;
-
+    isUpdatingRef.current = true;
     try {
       const res = await fetch('/api/room/submit', {
         method: 'POST',
@@ -143,6 +145,10 @@ function PlayLobbyContent() {
       }
     } catch (e) {
       console.error('Song submission error:', e);
+    } finally {
+      setTimeout(() => {
+        isUpdatingRef.current = false;
+      }, 1500);
     }
   };
 
@@ -152,6 +158,7 @@ function PlayLobbyContent() {
     const isSelfSong = songCreatorExclusion === nickname;
     if (!creatorGuess && !isSelfSong) return;
 
+    isUpdatingRef.current = true;
     try {
       const res = await fetch('/api/room/vote', {
         method: 'POST',
@@ -172,6 +179,10 @@ function PlayLobbyContent() {
       }
     } catch (e) {
       console.error('Vote submission error:', e);
+    } finally {
+      setTimeout(() => {
+        isUpdatingRef.current = false;
+      }, 1500);
     }
   };
 

@@ -32,6 +32,7 @@ export default function HostPage() {
   const [joinUrl, setJoinUrl] = useState<string>('');
 
   const pollingIntervalRef = useRef<any>(null);
+  const isUpdatingRef = useRef<boolean>(false);
 
   // 1. Initial room creation setup
   useEffect(() => {
@@ -42,6 +43,17 @@ export default function HostPage() {
     const newHostId = Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
     setHostId(newHostId);
   }, []);
+
+  const syncState = (data: any) => {
+    setPhase(data.phase);
+    setTheme(data.theme);
+    setPlayers(data.players || []);
+    setReadyPlayers(data.readyPlayers || []);
+    setSubmissions(data.submissions || []);
+    setVotes(data.votes || []);
+    setCurrentRoundIdx(data.currentRoundIdx || 0);
+    setScores(data.scores || {});
+  };
 
   // 2. Initialize room state on server and start polling
   useEffect(() => {
@@ -63,6 +75,7 @@ export default function HostPage() {
 
     // Start 1s polling interval
     pollingIntervalRef.current = setInterval(async () => {
+      if (isUpdatingRef.current) return;
       try {
         const res = await fetch(`/api/room/state?room=${roomCode}`);
         if (res.status === 404) {
@@ -73,17 +86,7 @@ export default function HostPage() {
         if (!res.ok) return;
         const data = await res.json();
         
-        // Sync states from database
-        setPhase(data.phase);
-        setTheme(data.theme);
-        setPlayers(data.players || []);
-        setReadyPlayers(data.readyPlayers || []);
-        
-        // Host gets raw submissions & votes from the state object safely
-        setSubmissions(data.submissions || []);
-        setVotes(data.votes || []);
-        setCurrentRoundIdx(data.currentRoundIdx || 0);
-        setScores(data.scores || {});
+        syncState(data);
       } catch (err) {
         console.error('Polling state error:', err);
       }
@@ -96,18 +99,26 @@ export default function HostPage() {
 
   // Helper to send server actions
   const sendAction = async (action: string, payload: any = {}) => {
+    isUpdatingRef.current = true;
     try {
       const res = await fetch('/api/room/action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roomCode, action, hostId, payload }),
       });
-      if (!res.ok) {
+      if (res.ok) {
+        const data = await res.json();
+        syncState(data);
+      } else {
         const err = await res.json();
         console.error('Action failed:', err.error);
       }
     } catch (e) {
       console.error('Network error during action:', e);
+    } finally {
+      setTimeout(() => {
+        isUpdatingRef.current = false;
+      }, 1500);
     }
   };
 
