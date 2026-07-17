@@ -2,181 +2,142 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { generateRoomCode } from '@/lib/roomUtils';
-import { supabase } from '@/lib/supabase';
-import { parseSunoUrl } from '@/lib/sunoUtils';
 import { GamePhase, Submission, Vote, ScoreState } from '@/lib/types';
 import confetti from 'canvas-confetti';
 
-interface PlayerPresence {
+interface PlayerPoints {
   nickname: string;
-  isHost: boolean;
-  isReady: boolean;
+  points: number;
+  reason: string;
 }
 
 export default function HostPage() {
-  // Game state
+  // Room identifiers
   const [roomCode, setRoomCode] = useState<string>('');
+  const [hostId, setHostId] = useState<string>('');
+  
+  // Game states received from server
   const [phase, setPhase] = useState<GamePhase>('LOBBY');
   const [players, setPlayers] = useState<string[]>([]);
   const [readyPlayers, setReadyPlayers] = useState<string[]>([]);
-  
-  // Game inputs & loop variables
-  const [theme, setTheme] = useState<string>('Un morceau épique sur un codeur fatigué');
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [votes, setVotes] = useState<Vote[]>([]);
   const [currentRoundIdx, setCurrentRoundIdx] = useState<number>(0);
   const [scores, setScores] = useState<ScoreState>({});
   
-  // Points calculation helper
-  const [roundPointsGained, setRoundPointsGained] = useState<{
-    nickname: string;
-    points: number;
-    reason: string;
-  }[]>([]);
-
-  // DOM URLs
-  const [joinUrl, setJoinUrl] = useState<string>('');
+  // Local inputs
+  const [theme, setTheme] = useState<string>('Un morceau épique sur un codeur fatigué');
+  const [roundPointsGained, setRoundPointsGained] = useState<PlayerPoints[]>([]);
   const [copied, setCopied] = useState(false);
+  const [joinUrl, setJoinUrl] = useState<string>('');
 
-  // Channels ref
-  const mainChannelRef = useRef<any>(null);
-  const hostChannelRef = useRef<any>(null);
+  const pollingIntervalRef = useRef<any>(null);
 
-  // Generate Room PIN on mount
+  // 1. Initial room creation setup
   useEffect(() => {
     const code = generateRoomCode();
     setRoomCode(code);
     setJoinUrl(`${window.location.origin}/play?room=${code}`);
+
+    const newHostId = Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+    setHostId(newHostId);
   }, []);
 
-  // Presence channel config
+  // 2. Initialize room state on server and start polling
   useEffect(() => {
-    if (!roomCode) return;
+    if (!roomCode || !hostId) return;
 
-    // Join main channel to broadcast state changes
-    const mainChannel = supabase.channel(`room_${roomCode}`, {
-      config: {
-        presence: {
-          key: 'host',
-        },
-      },
-    });
-
-    mainChannelRef.current = mainChannel;
-
-    mainChannel
-      .on('presence', { event: 'sync' }, () => {
-        const state = mainChannel.presenceState();
-        const activePlayers: string[] = [];
-        
-        Object.keys(state).forEach((key) => {
-          const presences = state[key] as any[];
-          presences.forEach((p) => {
-            if (p.nickname && !p.isHost) {
-              activePlayers.push(p.nickname);
-            }
-          });
+    const initializeRoom = async () => {
+      try {
+        await fetch('/api/room/join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomCode, isHost: true, hostId }),
         });
-        
-        setPlayers(activePlayers);
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await mainChannel.track({ isHost: true, isReady: true });
-        }
-      });
+      } catch (e) {
+        console.error('Failed to initialize room state:', e);
+      }
+    };
 
-    // Join private Host channel to receive anonymous submissions & votes
-    const hostChannel = supabase.channel(`room_${roomCode}_host`);
-    hostChannelRef.current = hostChannel;
+    initializeRoom();
 
-    hostChannel
-      .on('broadcast', { event: 'song_submitted' }, (payload) => {
-        const { nickname, title, sunoUrl } = payload.payload;
-        const parsedEmbed = parseSunoUrl(sunoUrl);
-        
-        if (parsedEmbed) {
-          setSubmissions((prev) => {
-            // Prevent duplicates
-            const filtered = prev.filter((s) => s.nickname !== nickname);
-            return [...filtered, { nickname, title, sunoUrl: parsedEmbed }];
-          });
-          setReadyPlayers((prev) => {
-            if (!prev.includes(nickname)) return [...prev, nickname];
-            return prev;
-          });
+    // Start 1s polling interval
+    pollingIntervalRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/room/state?room=${roomCode}`);
+        if (res.status === 404) {
+          // If room gets deleted or server restarted, re-initialize it
+          await initializeRoom();
+          return;
         }
-      })
-      .on('broadcast', { event: 'vote_submitted' }, (payload) => {
-        const { voter, guess, rating } = payload.payload;
-        setVotes((prev) => {
-          const filtered = prev.filter((v) => v.voter !== voter);
-          return [...filtered, { voter, guess, rating }];
-        });
-      })
-      .subscribe();
+        if (!res.ok) return;
+        const data = await res.json();
+        
+        // Sync states from database
+        setPhase(data.phase);
+        setTheme(data.theme);
+        setPlayers(data.players || []);
+        setReadyPlayers(data.readyPlayers || []);
+        
+        // Host gets raw submissions & votes from the state object safely
+        setSubmissions(data.submissions || []);
+        setVotes(data.votes || []);
+        setCurrentRoundIdx(data.currentRoundIdx || 0);
+        setScores(data.scores || {});
+      } catch (err) {
+        console.error('Polling state error:', err);
+      }
+    }, 1000);
 
     return () => {
-      supabase.removeChannel(mainChannel);
-      supabase.removeChannel(hostChannel);
+      if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
     };
-  }, [roomCode]);
+  }, [roomCode, hostId]);
 
-  // Broadcast current phase to players
-  const broadcastPhaseChange = (nextPhase: GamePhase, extraPayload: any = {}) => {
-    if (mainChannelRef.current) {
-      mainChannelRef.current.send({
-        type: 'broadcast',
-        event: 'phase_change',
-        payload: { phase: nextPhase, theme, ...extraPayload },
+  // Helper to send server actions
+  const sendAction = async (action: string, payload: any = {}) => {
+    try {
+      const res = await fetch('/api/room/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomCode, action, hostId, payload }),
       });
+      if (!res.ok) {
+        const err = await res.json();
+        console.error('Action failed:', err.error);
+      }
+    } catch (e) {
+      console.error('Network error during action:', e);
     }
   };
 
   const startSubmissionPhase = () => {
-    setSubmissions([]);
-    setReadyPlayers([]);
-    setPhase('SUBMISSION');
-    broadcastPhaseChange('SUBMISSION');
+    sendAction('START_SUBMISSION', { theme });
   };
 
   const startGuessingPhase = (roundIdx: number) => {
-    if (submissions.length === 0) return;
-    
-    setVotes([]);
-    setPhase('GUESSING');
-    setCurrentRoundIdx(roundIdx);
-    
-    const activeSong = submissions[roundIdx];
-    broadcastPhaseChange('GUESSING', {
-      currentSongTitle: activeSong.title,
-      creator: activeSong.nickname, // Sent privately to allow clients to filter out the creator
-    });
+    sendAction('START_GUESSING', { roundIdx });
   };
 
   const calculatePoints = () => {
     const currentSong = submissions[currentRoundIdx];
     const creator = currentSong.nickname;
-    
-    // Find all votes for the current round
-    const roundVotes = votes;
-    const correctVotes = roundVotes.filter((v) => v.guess === creator);
-    const correctGuessers = correctVotes.map((v) => v.voter);
-    
-    const G = correctGuessers.length; // Number of correct guesses
-    const P = players.length; // Total players
+    const G = votes.filter((v) => v.guess === creator).length;
+    const P = players.length;
 
-    const pointsList: { nickname: string; points: number; reason: string }[] = [];
+    const pointsList: PlayerPoints[] = [];
     const scoreDelta: ScoreState = {};
 
-    // 1. Guesser points (500 pts for correct guess)
-    correctGuessers.forEach((guesser) => {
-      pointsList.push({
-        nickname: guesser,
-        points: 500,
-        reason: 'Bonne réponse ! (+500)',
-      });
-      scoreDelta[guesser] = (scoreDelta[guesser] || 0) + 500;
+    // 1. Guesser points (500 pts)
+    votes.forEach((v) => {
+      if (v.guess === creator) {
+        pointsList.push({
+          nickname: v.voter,
+          points: 500,
+          reason: 'Bonne réponse ! (+500)',
+        });
+        scoreDelta[v.voter] = (scoreDelta[v.voter] || 0) + 500;
+      }
     });
 
     // 2. Creator points (Sweet Spot Calculation)
@@ -186,7 +147,6 @@ export default function HostPage() {
       let creatorBasePoints = maxCreatorPoints;
       
       if (P > 2) {
-        // Points decrease as more players guess the creator correctly
         creatorBasePoints = Math.round(maxCreatorPoints * (1 - decay * ((G - 1) / (P - 2))));
       }
       
@@ -205,7 +165,7 @@ export default function HostPage() {
     }
 
     // 3. Rating Bonus (Average star rating * 100)
-    const validRatings = roundVotes.filter((v) => v.rating > 0);
+    const validRatings = votes.filter((v) => v.rating > 0);
     if (validRatings.length > 0) {
       const averageRating = validRatings.reduce((sum, v) => sum + v.rating, 0) / validRatings.length;
       const ratingPoints = Math.round(averageRating * 100);
@@ -218,18 +178,19 @@ export default function HostPage() {
       scoreDelta[creator] = (scoreDelta[creator] || 0) + ratingPoints;
     }
 
-    // Apply score changes to global state
-    setScores((prev) => {
-      const nextScores = { ...prev };
-      Object.keys(scoreDelta).forEach((nick) => {
-        nextScores[nick] = (nextScores[nick] || 0) + scoreDelta[nick];
-      });
-      return nextScores;
+    // Update global state scores on Redis
+    const nextScores = { ...scores };
+    Object.keys(scoreDelta).forEach((nick) => {
+      nextScores[nick] = (nextScores[nick] || 0) + scoreDelta[nick];
     });
 
     setRoundPointsGained(pointsList);
-    setPhase('REVEAL');
-    broadcastPhaseChange('REVEAL');
+    
+    // Broadcast state update to Redis
+    sendAction('SET_STATE', {
+      phase: 'REVEAL',
+      scores: nextScores,
+    });
 
     // Trigger confetti
     confetti({
@@ -243,14 +204,18 @@ export default function HostPage() {
     if (currentRoundIdx + 1 < submissions.length) {
       startGuessingPhase(currentRoundIdx + 1);
     } else {
-      setPhase('LEADERBOARD');
-      broadcastPhaseChange('LEADERBOARD');
+      sendAction('SET_STATE', { phase: 'LEADERBOARD' });
       confetti({
         particleCount: 300,
         spread: 120,
         origin: { y: 0.6 },
       });
     }
+  };
+
+  const resetGame = () => {
+    sendAction('RESET');
+    setRoundPointsGained([]);
   };
 
   const copyToClipboard = () => {
@@ -346,7 +311,7 @@ export default function HostPage() {
               ) : (
                 <div className="grid grid-cols-2 gap-3 max-h-[350px] overflow-y-auto pr-2">
                   {players.map((nickname, idx) => (
-                    <div key={idx} className="glass-panel p-4 flex items-center justify-between border-l-4 border-l-[hsl(var(--primary))]">
+                    <div key={idx} className="glass-panel p-4 flex items-center justify-between border-l-4 border-l-[hsl(var(--primary))] animate-fade-in">
                       <span className="font-semibold truncate text-white">{nickname}</span>
                       <span className="w-2.5 h-2.5 rounded-full bg-[hsl(var(--success))] animate-pulse" />
                     </div>
@@ -406,14 +371,16 @@ export default function HostPage() {
             <h1 className="text-3xl font-black text-white text-center mb-6">À qui appartient ce morceau ?</h1>
 
             {/* Suno Iframe Embed */}
-            <div className="w-full max-w-3xl aspect-[16/9] rounded-2xl overflow-hidden bg-black border border-[rgba(255,255,255,0.1)] shadow-2xl mb-8">
-              <iframe
-                src={submissions[currentRoundIdx].sunoUrl}
-                className="w-full h-full border-none"
-                allow="autoplay; encrypted-media"
-                title={submissions[currentRoundIdx].title}
-              />
-            </div>
+            {submissions[currentRoundIdx] && (
+              <div className="w-full max-w-3xl aspect-[16/9] rounded-2xl overflow-hidden bg-black border border-[rgba(255,255,255,0.1)] shadow-2xl mb-8">
+                <iframe
+                  src={submissions[currentRoundIdx].sunoUrl}
+                  className="w-full h-full border-none"
+                  allow="autoplay; encrypted-media"
+                  title={submissions[currentRoundIdx].title}
+                />
+              </div>
+            )}
 
             <div className="w-full max-w-md flex flex-col items-center bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)] rounded-2xl p-4">
               <div className="flex items-center gap-3 mb-2">
@@ -431,7 +398,7 @@ export default function HostPage() {
         )}
 
         {/* REVEAL PHASE */}
-        {phase === 'REVEAL' && (
+        {phase === 'REVEAL' && submissions[currentRoundIdx] && (
           <div className="glass-panel p-8 flex flex-col items-center">
             <span className="text-xs uppercase tracking-widest text-[hsl(var(--secondary))] font-bold mb-2">Révélation</span>
             <h1 className="text-4xl font-black text-white mb-2">C'était le morceau de...</h1>
@@ -441,17 +408,21 @@ export default function HostPage() {
 
             <div className="w-full max-w-2xl bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-2xl p-6 mb-8">
               <h3 className="font-bold text-lg text-white mb-4 border-b border-[rgba(255,255,255,0.1)] pb-2">Attribution des points</h3>
-              <div className="flex flex-col gap-3">
-                {roundPointsGained.map((g, idx) => (
-                  <div key={idx} className="flex justify-between items-center bg-[rgba(255,255,255,0.03)] p-3 rounded-xl">
-                    <span className="font-semibold text-white">{g.nickname}</span>
-                    <div className="text-right">
-                      <span className="text-[hsl(var(--success))] font-bold text-sm block">+{g.points} pts</span>
-                      <span className="text-[10px] text-[rgba(255,255,255,0.4)]">{g.reason}</span>
+              {roundPointsGained.length === 0 ? (
+                <p className="text-xs text-[rgba(255,255,255,0.4)] text-center py-4">Aucun point attribué cette manche.</p>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {roundPointsGained.map((g, idx) => (
+                    <div key={idx} className="flex justify-between items-center bg-[rgba(255,255,255,0.03)] p-3 rounded-xl">
+                      <span className="font-semibold text-white">{g.nickname}</span>
+                      <div className="text-right">
+                        <span className="text-[hsl(var(--success))] font-bold text-sm block">+{g.points} pts</span>
+                        <span className="text-[10px] text-[rgba(255,255,255,0.4)]">{g.reason}</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <button onClick={nextRound} className="btn-neon w-full max-w-md py-4">
@@ -488,16 +459,7 @@ export default function HostPage() {
               })}
             </div>
 
-            <button 
-              onClick={() => {
-                setPhase('LOBBY');
-                setScores({});
-                setSubmissions([]);
-                setReadyPlayers([]);
-                setVotes([]);
-              }} 
-              className="btn-neon-outline w-full max-w-md py-4"
-            >
+            <button onClick={resetGame} className="btn-neon-outline w-full max-w-md py-4">
               Recommencer une partie
             </button>
           </div>

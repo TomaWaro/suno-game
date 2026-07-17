@@ -2,33 +2,38 @@
 
 import React, { Suspense, useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import { GamePhase } from '@/lib/types';
 
 function PlayLobbyContent() {
   const searchParams = useSearchParams();
+  
+  // Lobby state
   const [roomCode, setRoomCode] = useState<string>('');
   const [nickname, setNickname] = useState<string>('');
   const [joined, setJoined] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   
-  // Game states received from host
+  // Game states polled from server
   const [phase, setPhase] = useState<GamePhase>('LOBBY');
   const [theme, setTheme] = useState<string>('');
   const [playersList, setPlayersList] = useState<string[]>([]);
   const [songTitle, setSongTitle] = useState<string>('');
-  const [sunoUrl, setSunoUrl] = useState<string>('');
+  const [readyPlayers, setReadyPlayers] = useState<string[]>([]);
+  
+  // Form submissions
+  const [songUrl, setSongUrl] = useState<string>('');
   const [submittedSong, setSubmittedSong] = useState<boolean>(false);
-
-  // Voting states
   const [creatorGuess, setCreatorGuess] = useState<string>('');
   const [songRating, setSongRating] = useState<number>(0);
   const [submittedVote, setSubmittedVote] = useState<boolean>(false);
+  
+  // Safety self-voting exclusion key
   const [songCreatorExclusion, setSongCreatorExclusion] = useState<string>('');
 
-  const channelRef = useRef<any>(null);
+  const pollingIntervalRef = useRef<any>(null);
 
+  // Parse room query parameter on load
   useEffect(() => {
     const roomParam = searchParams.get('room');
     if (roomParam) {
@@ -36,6 +41,14 @@ function PlayLobbyContent() {
     }
   }, [searchParams]);
 
+  // Clean up polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+    };
+  }, []);
+
+  // Handle room joining
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!roomCode || !nickname) return;
@@ -44,108 +57,129 @@ function PlayLobbyContent() {
     setError('');
 
     try {
-      const channel = supabase.channel(`room_${roomCode}`, {
-        config: {
-          presence: {
-            key: nickname,
-          },
-        },
+      const res = await fetch('/api/room/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomCode, nickname }),
       });
 
-      channelRef.current = channel;
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || 'Impossible de rejoindre le salon.');
+        setLoading(false);
+        return;
+      }
 
-      channel
-        .on('presence', { event: 'sync' }, () => {
-          const state = channel.presenceState();
-          const list: string[] = [];
-          Object.keys(state).forEach((key) => {
-            const presences = state[key] as any[];
-            presences.forEach((p) => {
-              if (p.nickname && !p.isHost) {
-                list.push(p.nickname);
-              }
-            });
-          });
-          setPlayersList(list);
-        })
-        .on('broadcast', { event: 'phase_change' }, (payload) => {
-          const { phase: nextPhase, theme: nextTheme, currentSongTitle, creator } = payload.payload;
-          setPhase(nextPhase);
-          if (nextTheme) setTheme(nextTheme);
-          if (currentSongTitle) setSongTitle(currentSongTitle);
-          if (creator) setSongCreatorExclusion(creator);
+      setJoined(true);
+      setLoading(false);
 
-          // Reset forms on phase reset/change
-          if (nextPhase === 'SUBMISSION') {
+      // Start polling state
+      pollingIntervalRef.current = setInterval(async () => {
+        try {
+          const stateRes = await fetch(`/api/room/state?room=${roomCode}`);
+          if (!stateRes.ok) return;
+          const state = await stateRes.json();
+
+          // Sync loop values
+          setPhase(state.phase);
+          setTheme(state.theme);
+          setPlayersList(state.players || []);
+          setReadyPlayers(state.readyPlayers || []);
+          
+          if (state.submissions && state.currentRoundIdx !== undefined) {
+            const currentSong = state.submissions[state.currentRoundIdx];
+            if (currentSong) {
+              setSongTitle(currentSong.title);
+            }
+          }
+          
+          if (state.currentSongCreator) {
+            setSongCreatorExclusion(state.currentSongCreator);
+          }
+
+          // Reset client form states on phase transition events
+          // (Normally detected when the phase transitions on server)
+          if (state.phase === 'SUBMISSION' && submittedSong && !state.readyPlayers.includes(nickname)) {
             setSubmittedSong(false);
-            setSunoUrl('');
+            setSongUrl('');
+            setSongTitle('');
           }
-          if (nextPhase === 'GUESSING') {
-            setSubmittedVote(false);
-            setCreatorGuess('');
-            setSongRating(0);
+          if (state.phase === 'GUESSING' && submittedVote) {
+            // Keep guess form cleared for next round if state changes
+            const userVoteSubmitted = state.votes.some((v: any) => v.voter === nickname);
+            if (!userVoteSubmitted) {
+              setSubmittedVote(false);
+              setCreatorGuess('');
+              setSongRating(0);
+            }
           }
-        })
-        .subscribe(async (status) => {
-          if (status === 'SUBSCRIBED') {
-            await channel.track({ nickname, isHost: false, isReady: false });
-            setJoined(true);
-          } else {
-            setError('Impossible de rejoindre le salon.');
-            setLoading(false);
-          }
-        });
+        } catch (err) {
+          console.error('State polling error:', err);
+        }
+      }, 1000);
+
     } catch (err) {
       setError('Une erreur est survenue.');
       setLoading(false);
     }
   };
 
-  const submitSong = () => {
-    if (!sunoUrl) return;
-    
-    // Broadcast anonymously to the private host channel
-    const hostChannel = supabase.channel(`room_${roomCode}_host`);
-    hostChannel.subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        hostChannel.send({
-          type: 'broadcast',
-          event: 'song_submitted',
-          payload: { nickname, title: songTitle || 'Sans titre', sunoUrl },
-        });
+  // Submit Suno URL anonymously
+  const submitSong = async () => {
+    if (!songUrl) return;
+
+    try {
+      const res = await fetch('/api/room/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomCode, nickname, title: songTitle, sunoUrl: songUrl }),
+      });
+
+      if (res.ok) {
         setSubmittedSong(true);
-        
-        // Track updated ready status in presence
-        if (channelRef.current) {
-          await channelRef.current.track({ nickname, isHost: false, isReady: true });
-        }
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Erreur lors de la soumission.');
       }
-    });
+    } catch (e) {
+      console.error('Song submission error:', e);
+    }
   };
 
-  const submitVote = () => {
-    if (!creatorGuess) return;
+  // Submit anonymous vote & rating
+  const submitVote = async () => {
+    // If it's the player's own song, they don't vote (only rate)
+    const isSelfSong = songCreatorExclusion === nickname;
+    if (!creatorGuess && !isSelfSong) return;
 
-    // Send vote anonymously to the host
-    const hostChannel = supabase.channel(`room_${roomCode}_host`);
-    hostChannel.subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        hostChannel.send({
-          type: 'broadcast',
-          event: 'vote_submitted',
-          payload: { voter: nickname, guess: creatorGuess, rating: songRating },
-        });
+    try {
+      const res = await fetch('/api/room/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomCode,
+          voter: nickname,
+          guess: isSelfSong ? '' : creatorGuess,
+          rating: songRating,
+        }),
+      });
+
+      if (res.ok) {
         setSubmittedVote(true);
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Erreur lors de l\'envoi du vote.');
       }
-    });
+    } catch (e) {
+      console.error('Vote submission error:', e);
+    }
   };
 
-  // Render Joined/Lobby State
   if (joined) {
     return (
       <div className="w-full max-w-md flex flex-col items-center justify-center gap-6">
         
-        {/* Waiting in Lobby */}
+        {/* LOBBY PHASE */}
         {phase === 'LOBBY' && (
           <div className="w-full glass-panel p-8 flex flex-col items-center text-center z-10 animate-fade-in">
             <span className="w-12 h-12 rounded-full bg-[hsla(var(--success),0.2)] flex items-center justify-center text-[hsl(var(--success))] mb-4 animate-bounce font-bold">
@@ -165,7 +199,7 @@ function PlayLobbyContent() {
           </div>
         )}
 
-        {/* Submission Form */}
+        {/* SUBMISSION FORM */}
         {phase === 'SUBMISSION' && (
           <div className="w-full glass-panel p-8 flex flex-col z-10 animate-fade-in">
             <h2 className="text-2xl font-bold text-center text-white mb-4">Créez votre chanson !</h2>
@@ -198,15 +232,15 @@ function PlayLobbyContent() {
                   <label className="text-xs text-[rgba(255,255,255,0.6)] uppercase tracking-wider">Lien direct Suno AI</label>
                   <input
                     type="url"
-                    value={sunoUrl}
-                    onChange={(e) => setSunoUrl(e.target.value)}
+                    value={songUrl}
+                    onChange={(e) => setSongUrl(e.target.value)}
                     placeholder="https://suno.com/song/..."
                     className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none focus:border-[hsl(var(--secondary))]"
                   />
                 </div>
 
                 <button 
-                  disabled={!sunoUrl}
+                  disabled={!songUrl}
                   onClick={submitSong}
                   className="btn-neon w-full py-3 mt-2"
                 >
@@ -217,7 +251,7 @@ function PlayLobbyContent() {
           </div>
         )}
 
-        {/* Voting & Guessing */}
+        {/* GUESSING PHASE */}
         {phase === 'GUESSING' && (
           <div className="w-full glass-panel p-8 flex flex-col z-10 animate-fade-in">
             <h2 className="text-xl font-bold text-center text-white mb-2">Vote & Estimation</h2>
@@ -233,7 +267,8 @@ function PlayLobbyContent() {
               </div>
             ) : (
               <div className="flex flex-col gap-6">
-                {/* Exclude creator from voting for themselves */}
+                
+                {/* Self-voting protection */}
                 {songCreatorExclusion === nickname ? (
                   <div className="p-4 bg-[rgba(255,255,255,0.05)] rounded-xl text-center border border-[rgba(255,255,255,0.1)]">
                     <p className="text-sm font-semibold text-[hsl(var(--primary))]">C'est votre morceau !</p>
@@ -246,7 +281,7 @@ function PlayLobbyContent() {
                     </label>
                     <div className="grid grid-cols-2 gap-2 max-h-[200px] overflow-y-auto pr-1">
                       {playersList
-                        .filter((p) => p !== nickname) // Exclude oneself from the list of choices
+                        .filter((p) => p !== nickname) // Exclude voter's own nickname
                         .map((name, idx) => (
                           <button
                             key={idx}
@@ -261,7 +296,7 @@ function PlayLobbyContent() {
                   </div>
                 )}
 
-                {/* Rating (Open to all, including creator!) */}
+                {/* Rating selection (everyone rates!) */}
                 <div className="flex flex-col gap-2">
                   <label className="text-xs text-[rgba(255,255,255,0.6)] uppercase tracking-wider">
                     Notez le morceau
@@ -298,7 +333,7 @@ function PlayLobbyContent() {
             <span className="text-4xl mb-4 block">👀</span>
             <h2 className="text-2xl font-bold text-white mb-2">Révélation en cours...</h2>
             <p className="text-xs text-[rgba(255,255,255,0.5)]">
-              Regardez l'écran central pour voir qui a créé la chanson et découvrir les scores !
+              Regardez l'écran central pour voir le créateur du morceau et les scores attribués !
             </p>
           </div>
         )}
@@ -317,7 +352,7 @@ function PlayLobbyContent() {
     );
   }
 
-  // Lobby Input Form (First join screen)
+  // Join Form (Lobby connection)
   return (
     <form onSubmit={handleJoin} className="w-full max-w-md glass-panel p-8 flex flex-col z-10">
       <h2 className="text-3xl font-black text-center text-white mb-6">Rejoindre la partie</h2>
