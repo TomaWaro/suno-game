@@ -5,9 +5,9 @@ import { RoomState } from '../state/route';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { roomCode, voter, guess, rating } = body;
+    const { roomCode, voter, guess, rating, roundIdx } = body;
 
-    if (!roomCode || !voter) {
+    if (!roomCode || !voter || roundIdx === undefined) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
 
@@ -18,12 +18,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
 
-    // Filter duplicate votes to allow players to correct their selection
-    state.votes = state.votes.filter((v) => v.voter !== voter);
+    // Filter duplicate votes to allow players to correct their selection for this specific round
+    state.votes = state.votes.filter((v) => !(v.voter === voter && v.roundIdx === roundIdx));
     state.votes.push({
       voter,
       guess: guess || '',
       rating: rating || 0,
+      roundIdx,
     });
 
     await kv.set(roomKey, state);

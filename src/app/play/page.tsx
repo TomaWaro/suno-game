@@ -20,6 +20,7 @@ function PlayLobbyContent() {
   const [playersList, setPlayersList] = useState<string[]>([]);
   const [songTitle, setSongTitle] = useState<string>('');
   const [readyPlayers, setReadyPlayers] = useState<string[]>([]);
+  const [currentRoundIdx, setCurrentRoundIdx] = useState<number>(0);
   
   // Form submissions
   const [songUrl, setSongUrl] = useState<string>('');
@@ -87,6 +88,10 @@ function PlayLobbyContent() {
           setTheme(state.theme);
           setPlayersList(state.players || []);
           setReadyPlayers(state.readyPlayers || []);
+          
+          if (state.currentRoundIdx !== undefined) {
+            setCurrentRoundIdx(state.currentRoundIdx);
+          }
           
           if (state.submissions && state.currentRoundIdx !== undefined) {
             const currentSong = state.submissions[state.currentRoundIdx];
@@ -168,6 +173,7 @@ function PlayLobbyContent() {
           voter: nickname,
           guess: isSelfSong ? '' : creatorGuess,
           rating: songRating,
+          roundIdx: currentRoundIdx,
         }),
       });
 
@@ -308,17 +314,21 @@ function PlayLobbyContent() {
                 )}
 
                 {/* Rating selection (everyone rates!) */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs text-[rgba(255,255,255,0.6)] uppercase tracking-wider">
-                    Notez le morceau
+                <div className="bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)] rounded-2xl p-4 flex flex-col items-center">
+                  <label className="text-xs text-[rgba(255,255,255,0.5)] uppercase tracking-wider mb-1">
+                    Note du morceau
                   </label>
-                  <div className="flex justify-between items-center gap-1">
+                  <div className="flex justify-center items-center gap-2">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
                         key={star}
                         type="button"
                         onClick={() => setSongRating(star)}
-                        className={`text-3xl transition-transform active:scale-90 ${songRating >= star ? 'text-yellow-400' : 'text-[rgba(255,255,255,0.2)]'}`}
+                        className={`text-5xl px-2 py-2 transition-all transform active:scale-125 ${
+                          songRating >= star
+                            ? 'text-amber-400 drop-shadow-[0_0_10px_rgba(245,158,11,0.7)] scale-110 font-bold'
+                            : 'text-white/10'
+                        }`}
                       >
                         ★
                       </button>

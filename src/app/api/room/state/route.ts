@@ -45,12 +45,14 @@ export async function GET(request: Request) {
   const showVotes = state.phase === 'REVEAL' || state.phase === 'LEADERBOARD';
   const anonymizedVotes = showVotes 
     ? state.votes 
-    : state.votes.map(v => ({ voter: v.voter, guess: '', rating: 0 }));
+    : state.votes.map(v => ({ voter: v.voter, guess: '', rating: 0, roundIdx: v.roundIdx }));
 
   const responseState = {
     ...state,
     submissions: filteredSubmissions,
     votes: anonymizedVotes,
+    // Add count of votes received specifically for the current round
+    currentRoundVotesCount: state.votes.filter(v => v.roundIdx === state.currentRoundIdx).length,
     // Provide true submitter identity for the active song only during guess phase,
     // but ONLY to allow the client app to filter out the creator from self-voting
     currentSongCreator: state.phase === 'GUESSING' && state.submissions[state.currentRoundIdx]

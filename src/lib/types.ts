@@ -10,6 +10,7 @@ export interface Vote {
   voter: string;
   guess: string;
   rating: number; // 1-5 stars
+  roundIdx: number;
 }
 
 export interface ScoreState {

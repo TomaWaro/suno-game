@@ -24,6 +24,10 @@ export default function HostPage() {
   const [votes, setVotes] = useState<Vote[]>([]);
   const [currentRoundIdx, setCurrentRoundIdx] = useState<number>(0);
   const [scores, setScores] = useState<ScoreState>({});
+
+  // Local reveal states & polling counters
+  const [revealedThisRound, setRevealedThisRound] = useState<boolean>(false);
+  const [currentRoundVotesCount, setCurrentRoundVotesCount] = useState<number>(0);
   
   // Local inputs
   const [theme, setTheme] = useState<string>('Un morceau épique sur un codeur fatigué');
@@ -53,6 +57,7 @@ export default function HostPage() {
     setVotes(data.votes || []);
     setCurrentRoundIdx(data.currentRoundIdx || 0);
     setScores(data.scores || {});
+    setCurrentRoundVotesCount(data.currentRoundVotesCount || 0);
   };
 
   // 2. Initialize room state on server and start polling
@@ -130,17 +135,29 @@ export default function HostPage() {
     sendAction('START_GUESSING', { roundIdx });
   };
 
+  const startRevealPhase = () => {
+    setRoundPointsGained([]);
+    setRevealedThisRound(false);
+    sendAction('SET_STATE', {
+      phase: 'REVEAL',
+      currentRoundIdx: 0,
+    });
+  };
+
   const calculatePoints = () => {
     const currentSong = submissions[currentRoundIdx];
     const creator = currentSong.nickname;
-    const G = votes.filter((v) => v.guess === creator).length;
+    
+    // Filter votes specifically for the current round index
+    const roundVotes = votes.filter((v) => v.roundIdx === currentRoundIdx);
+    const G = roundVotes.filter((v) => v.guess === creator).length;
     const P = players.length;
 
     const pointsList: PlayerPoints[] = [];
     const scoreDelta: ScoreState = {};
 
     // 1. Guesser points (500 pts)
-    votes.forEach((v) => {
+    roundVotes.forEach((v) => {
       if (v.guess === creator) {
         pointsList.push({
           nickname: v.voter,
@@ -176,7 +193,7 @@ export default function HostPage() {
     }
 
     // 3. Rating Bonus (Average star rating * 100)
-    const validRatings = votes.filter((v) => v.rating > 0);
+    const validRatings = roundVotes.filter((v) => v.rating > 0);
     if (validRatings.length > 0) {
       const averageRating = validRatings.reduce((sum, v) => sum + v.rating, 0) / validRatings.length;
       const ratingPoints = Math.round(averageRating * 100);
@@ -196,10 +213,10 @@ export default function HostPage() {
     });
 
     setRoundPointsGained(pointsList);
+    setRevealedThisRound(true);
     
     // Broadcast state update to Redis
     sendAction('SET_STATE', {
-      phase: 'REVEAL',
       scores: nextScores,
     });
 
@@ -211,9 +228,13 @@ export default function HostPage() {
     });
   };
 
-  const nextRound = () => {
+  const nextRevealRound = () => {
     if (currentRoundIdx + 1 < submissions.length) {
-      startGuessingPhase(currentRoundIdx + 1);
+      setRoundPointsGained([]);
+      setRevealedThisRound(false);
+      sendAction('SET_STATE', {
+        currentRoundIdx: currentRoundIdx + 1,
+      });
     } else {
       sendAction('SET_STATE', { phase: 'LEADERBOARD' });
       confetti({
@@ -375,7 +396,7 @@ export default function HostPage() {
 
         {/* GUESSING PHASE */}
         {phase === 'GUESSING' && (
-          <div className="glass-panel p-8 flex flex-col items-center">
+          <div className="glass-panel p-8 flex flex-col items-center animate-fade-in">
             <span className="text-xs uppercase tracking-widest text-[hsl(var(--secondary))] font-bold mb-2">
               Morceau {currentRoundIdx + 1} / {submissions.length}
             </span>
@@ -396,49 +417,88 @@ export default function HostPage() {
             <div className="w-full max-w-md flex flex-col items-center bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)] rounded-2xl p-4">
               <div className="flex items-center gap-3 mb-2">
                 <span className="w-3 h-3 rounded-full bg-[hsl(var(--primary))] animate-ping" />
-                <span className="text-sm font-semibold text-white">Votes reçus : {votes.length} / {players.length}</span>
+                <span className="text-sm font-semibold text-white">Votes reçus : {currentRoundVotesCount} / {players.length}</span>
               </div>
-              <button 
-                onClick={calculatePoints}
-                className="btn-neon w-full py-3 mt-4"
-              >
-                Révéler le créateur
-              </button>
+              
+              {currentRoundIdx + 1 < submissions.length ? (
+                <button 
+                  onClick={() => startGuessingPhase(currentRoundIdx + 1)}
+                  className="btn-neon w-full py-3 mt-4"
+                >
+                  Chanson suivante ({currentRoundIdx + 1} / {submissions.length})
+                </button>
+              ) : (
+                <button 
+                  onClick={startRevealPhase}
+                  className="btn-neon w-full py-3 mt-4 animate-pulse-glow"
+                >
+                  Terminer l'écoute et passer aux révélations
+                </button>
+              )}
             </div>
           </div>
         )}
 
         {/* REVEAL PHASE */}
         {phase === 'REVEAL' && submissions[currentRoundIdx] && (
-          <div className="glass-panel p-8 flex flex-col items-center">
-            <span className="text-xs uppercase tracking-widest text-[hsl(var(--secondary))] font-bold mb-2">Révélation</span>
-            <h1 className="text-4xl font-black text-white mb-2">C'était le morceau de...</h1>
-            <h2 className="text-6xl font-black text-[hsl(var(--primary))] animate-pulse mb-8">
-              {submissions[currentRoundIdx].nickname}
-            </h2>
+          <div className="glass-panel p-8 flex flex-col items-center animate-fade-in">
+            <span className="text-xs uppercase tracking-widest text-[hsl(var(--secondary))] font-bold mb-2">
+              Révélation {currentRoundIdx + 1} / {submissions.length}
+            </span>
 
-            <div className="w-full max-w-2xl bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-2xl p-6 mb-8">
-              <h3 className="font-bold text-lg text-white mb-4 border-b border-[rgba(255,255,255,0.1)] pb-2">Attribution des points</h3>
-              {roundPointsGained.length === 0 ? (
-                <p className="text-xs text-[rgba(255,255,255,0.4)] text-center py-4">Aucun point attribué cette manche.</p>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  {roundPointsGained.map((g, idx) => (
-                    <div key={idx} className="flex justify-between items-center bg-[rgba(255,255,255,0.03)] p-3 rounded-xl">
-                      <span className="font-semibold text-white">{g.nickname}</span>
-                      <div className="text-right">
-                        <span className="text-[hsl(var(--success))] font-bold text-sm block">+{g.points} pts</span>
-                        <span className="text-[10px] text-[rgba(255,255,255,0.4)]">{g.reason}</span>
-                      </div>
-                    </div>
-                  ))}
+            {!revealedThisRound ? (
+              <>
+                <h1 className="text-3xl font-black text-white text-center mb-2">Qui a créé cette chanson ?</h1>
+                <h2 className="text-xl font-semibold text-[hsl(var(--secondary))] mb-6">"{submissions[currentRoundIdx].title}"</h2>
+
+                {/* Optional replay embed */}
+                <div className="w-full max-w-2xl aspect-[16/9] rounded-xl overflow-hidden bg-black border border-[rgba(255,255,255,0.05)] shadow-xl mb-8 opacity-75 hover:opacity-100 transition-opacity">
+                  <iframe
+                    src={submissions[currentRoundIdx].sunoUrl}
+                    className="w-full h-full border-none"
+                    allow="autoplay; encrypted-media"
+                    title={submissions[currentRoundIdx].title}
+                  />
                 </div>
-              )}
-            </div>
 
-            <button onClick={nextRound} className="btn-neon w-full max-w-md py-4">
-              {currentRoundIdx + 1 < submissions.length ? 'Prochain morceau' : 'Podium final'}
-            </button>
+                <button 
+                  onClick={calculatePoints}
+                  className="btn-neon w-full max-w-md py-4 animate-pulse-glow"
+                >
+                  Découvrir le créateur
+                </button>
+              </>
+            ) : (
+              <>
+                <h1 className="text-4xl font-black text-white mb-2">C'était le morceau de...</h1>
+                <h2 className="text-6xl font-black text-[hsl(var(--primary))] animate-pulse mb-8">
+                  {submissions[currentRoundIdx].nickname}
+                </h2>
+
+                <div className="w-full max-w-2xl bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-2xl p-6 mb-8">
+                  <h3 className="font-bold text-lg text-white mb-4 border-b border-[rgba(255,255,255,0.1)] pb-2">Attribution des points</h3>
+                  {roundPointsGained.length === 0 ? (
+                    <p className="text-xs text-[rgba(255,255,255,0.4)] text-center py-4">Aucun point attribué cette manche.</p>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      {roundPointsGained.map((g, idx) => (
+                        <div key={idx} className="flex justify-between items-center bg-[rgba(255,255,255,0.03)] p-3 rounded-xl">
+                          <span className="font-semibold text-white">{g.nickname}</span>
+                          <div className="text-right">
+                            <span className="text-[hsl(var(--success))] font-bold text-sm block">+{g.points} pts</span>
+                            <span className="text-[10px] text-[rgba(255,255,255,0.4)]">{g.reason}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <button onClick={nextRevealRound} className="btn-neon w-full max-w-md py-4">
+                  {currentRoundIdx + 1 < submissions.length ? 'Révéler le morceau suivant' : 'Podium final'}
+                </button>
+              </>
+            )}
           </div>
         )}
 
