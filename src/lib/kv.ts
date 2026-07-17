@@ -1,3 +1,14 @@
+// Fallback for Upstash Redis variables if Vercel KV is not explicitly named KV
+if (process.env.UPSTASH_REDIS_REST_URL && !process.env.KV_REST_API_URL) {
+  process.env.KV_REST_API_URL = process.env.UPSTASH_REDIS_REST_URL;
+}
+if (process.env.UPSTASH_REDIS_REST_TOKEN && !process.env.KV_REST_API_TOKEN) {
+  process.env.KV_REST_API_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+}
+if (process.env.UPSTASH_REDIS_URL && !process.env.KV_URL) {
+  process.env.KV_URL = process.env.UPSTASH_REDIS_URL;
+}
+
 import fs from 'fs';
 import path from 'path';
 import { kv as vercelKv } from '@vercel/kv';
