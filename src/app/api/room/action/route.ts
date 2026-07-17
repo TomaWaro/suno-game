@@ -42,6 +42,7 @@ export async function POST(request: Request) {
         if (payload?.scores) state.scores = payload.scores;
         if (payload?.votes) state.votes = payload.votes;
         if (payload?.readyPlayers) state.readyPlayers = payload.readyPlayers;
+        if (payload?.currentRoundIdx !== undefined) state.currentRoundIdx = payload.currentRoundIdx;
         break;
 
       case 'RESET':
