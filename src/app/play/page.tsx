@@ -300,11 +300,10 @@ function PlayLobbyContent() {
                       {playersList
                         .filter((p) => p !== nickname) // Exclude voter's own nickname
                         .map((name, idx) => (
-                          <button
+                          <div
                             key={idx}
-                            type="button"
                             onClick={() => setCreatorGuess(name)}
-                            className="p-3 rounded-xl border text-sm font-semibold transition-all"
+                            className="p-3 rounded-xl border text-sm font-semibold transition-all cursor-pointer text-center"
                             style={{
                               borderColor: creatorGuess === name ? 'hsl(330, 100%, 50%)' : 'rgba(255,255,255,0.1)',
                               backgroundColor: creatorGuess === name ? 'rgba(236, 72, 153, 0.25)' : 'rgba(255,255,255,0.03)',
@@ -313,7 +312,7 @@ function PlayLobbyContent() {
                             }}
                           >
                             {name}
-                          </button>
+                          </div>
                         ))}
                     </div>
                   </div>
@@ -326,24 +325,27 @@ function PlayLobbyContent() {
                   </label>
                   <div className="flex justify-center items-center gap-1">
                     {[1, 2, 3, 4, 5].map((star) => (
-                      <button
+                      <div
                         key={star}
-                        type="button"
                         onClick={() => setSongRating(star)}
-                        className="p-2 transition-all transform active:scale-125"
+                        className="p-2 transition-all transform active:scale-125 cursor-pointer"
+                        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           viewBox="0 0 24 24"
-                          fill={songRating >= star ? '#fbbf24' : 'rgba(255,255,255,0.15)'}
-                          className="w-12 h-12"
+                          width="48"
+                          height="48"
+                          fill={songRating >= star ? '#fbbf24' : 'rgba(255,255,255,0.2)'}
                           style={{
+                            width: '48px',
+                            height: '48px',
                             filter: songRating >= star ? 'drop-shadow(0 0 8px rgba(251,191,36,0.6))' : 'none'
                           }}
                         >
                           <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
                         </svg>
-                      </button>
+                      </div>
                     ))}
                   </div>
                 </div>

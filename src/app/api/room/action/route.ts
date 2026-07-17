@@ -35,7 +35,6 @@ export async function POST(request: Request) {
       case 'START_GUESSING':
         state.phase = 'GUESSING';
         state.currentRoundIdx = payload?.roundIdx ?? state.currentRoundIdx;
-        state.votes = [];
         break;
 
       case 'SET_STATE':
