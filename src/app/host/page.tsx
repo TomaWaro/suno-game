@@ -29,6 +29,7 @@ export default function HostPage() {
   const [votes, setVotes] = useState<Vote[]>([]);
   const [currentRoundIdx, setCurrentRoundIdx] = useState<number>(0);
   const [scores, setScores] = useState<ScoreState>({});
+  const [displayScores, setDisplayScores] = useState<ScoreState>({});
 
   // Local reveal states & polling counters
   const [revealedThisRound, setRevealedThisRound] = useState<boolean>(false);
@@ -64,6 +65,13 @@ export default function HostPage() {
     setScores(data.scores || {});
     setCurrentRoundVotesCount(data.currentRoundVotesCount || 0);
   };
+
+  // Sync displayScores when not animating
+  useEffect(() => {
+    if (phase !== 'REVEAL' || !revealedThisRound) {
+      setDisplayScores(scores);
+    }
+  }, [scores, phase, revealedThisRound]);
 
   // 2. Initialize room state on server and start polling
   useEffect(() => {
@@ -224,6 +232,11 @@ export default function HostPage() {
     sendAction('SET_STATE', {
       scores: nextScores,
     });
+
+    // Trigger animation after mount
+    setTimeout(() => {
+      setDisplayScores(nextScores);
+    }, 150);
 
     // Trigger confetti
     confetti({
@@ -483,7 +496,7 @@ export default function HostPage() {
                   <h2 className="text-6xl font-black text-[hsl(var(--primary))] animate-pulse mb-8 text-center">
                     {submissions[currentRoundIdx].nickname}
                   </h2>
-                  <div className="w-full aspect-[16/9] rounded-xl overflow-hidden bg-black border border-[rgba(255,255,255,0.05)] shadow-xl mb-8">
+                  <div className="w-full aspect-[16/9] rounded-xl overflow-hidden bg-black border border-white/10 shadow-xl mb-8">
                     <iframe
                       src={getEmbedUrl(submissions[currentRoundIdx].sunoUrl)}
                       className="w-full h-full border-none"
@@ -497,12 +510,12 @@ export default function HostPage() {
                 </div>
 
                 {/* Right Side: Race Track */}
-                <div className="w-full md:w-1/2 flex flex-col bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.05)] rounded-3xl p-6">
-                  <h3 className="font-bold text-2xl text-white mb-8 border-b border-[rgba(255,255,255,0.1)] pb-3">Course aux points</h3>
+                <div className="w-full md:w-1/2 flex flex-col bg-white/5 border border-white/10 rounded-3xl p-6">
+                  <h3 className="font-bold text-2xl text-white mb-8 border-b border-white/10 pb-3">Course aux points</h3>
                   <div className="flex flex-col gap-10 w-full mt-4">
                     {players.map((nickname, idx) => {
-                      const score = scores[nickname] || 0;
-                      const maxScore = Math.max(2000, ...(Object.values(scores) as number[]));
+                      const score = displayScores[nickname] || 0;
+                      const maxScore = Math.max(2000, ...(Object.values(displayScores) as number[]));
                       const percentage = Math.min(100, Math.max(0, (score / maxScore) * 100));
                       
                       const gainedThisRound = roundPointsGained.filter(g => g.nickname === nickname);
@@ -516,9 +529,9 @@ export default function HostPage() {
                             <span className="text-[hsl(var(--secondary))] font-black text-xl">{score} pts</span>
                           </div>
                           
-                          <div className="w-full h-4 bg-[rgba(255,255,255,0.05)] rounded-full relative shadow-inner">
+                          <div className="w-full h-4 bg-white/10 rounded-full relative shadow-inner">
                             <div 
-                              className="absolute top-0 left-0 h-full bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--secondary))] rounded-full transition-all duration-[2000ms] ease-out flex items-center justify-end"
+                              className="absolute top-0 left-0 h-full bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--secondary))] rounded-full transition-all duration-1000 ease-out flex items-center justify-end"
                               style={{ width: `${percentage}%` }}
                             >
                                <div className="w-10 h-10 bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,0.5)] transform translate-x-5 flex items-center justify-center text-xl z-10 animate-bounce">
@@ -528,7 +541,7 @@ export default function HostPage() {
                                {totalGained > 0 && (
                                  <div className="absolute -top-14 right-0 transform translate-x-1/2 animate-fade-up-slow flex flex-col items-center">
                                     <span className="text-[hsl(var(--success))] font-black text-2xl drop-shadow-md">+{totalGained}</span>
-                                    <span className="text-[10px] text-[rgba(255,255,255,0.8)] font-bold bg-black bg-opacity-50 px-2 py-0.5 rounded-full whitespace-nowrap mt-1">{reasons}</span>
+                                    <span className="text-[10px] text-white/80 font-bold bg-black/50 px-2 py-0.5 rounded-full whitespace-nowrap mt-1">{reasons}</span>
                                  </div>
                                )}
                             </div>
