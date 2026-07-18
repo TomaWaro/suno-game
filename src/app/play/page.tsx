@@ -303,19 +303,8 @@ function PlayLobbyContent() {
                 <h3 className="font-bold text-white mb-1">Morceau envoyé !</h3>
                 <p className="text-xs text-[rgba(255,255,255,0.5)]">Attente des autres joueurs...</p>
               </div>
-            ) : (
+             ) : (
               <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs text-[rgba(255,255,255,0.6)] uppercase tracking-wider">Titre de la chanson</label>
-                  <input
-                    type="text"
-                    value={songTitle}
-                    onChange={(e) => setSongTitle(e.target.value)}
-                    placeholder="Ex: Toast in the Rain"
-                    className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[hsl(var(--primary))]"
-                  />
-                </div>
-                
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs text-[rgba(255,255,255,0.6)] uppercase tracking-wider">Lien direct Suno AI</label>
                   <input
@@ -344,7 +333,7 @@ function PlayLobbyContent() {
           <div className="w-full glass-panel p-8 flex flex-col z-10 animate-fade-in">
             <h2 className="text-xl font-bold text-center text-white mb-2">Vote & Estimation</h2>
             <p className="text-xs text-[rgba(255,255,255,0.5)] text-center mb-6">
-              Morceau écouté : <span className="text-[hsl(var(--secondary))] font-bold">"{songTitle}"</span>
+              Écoute en cours du morceau mystère 🎶
             </p>
 
             {submittedVote ? (

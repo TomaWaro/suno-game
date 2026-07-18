@@ -508,102 +508,103 @@ export default function HostPage() {
               </span>
             </div>
 
-            {!revealedThisRound ? (
-              <div className="flex flex-col items-center w-full">
-                <h1 className="text-3xl font-black text-white text-center mb-2">Qui a créé cette chanson ?</h1>
-                <h2 className="text-xl font-semibold text-[hsl(var(--secondary))] mb-6">"{submissions[currentRoundIdx].title}"</h2>
+            <div className="flex flex-col md:flex-row w-full gap-8">
+              {/* Left Side: Guessing or Reveal */}
+              <div className="w-full md:w-1/2 flex flex-col items-center justify-center">
+                {!revealedThisRound ? (
+                  <>
+                    <h1 className="text-3xl font-black text-white text-center mb-4">Qui a créé cette chanson ?</h1>
+                    
+                    {/* Replay embed */}
+                    <div className="w-full aspect-[16/9] rounded-xl overflow-hidden bg-black border border-[rgba(255,255,255,0.05)] shadow-xl mb-8 opacity-75 hover:opacity-100 transition-opacity" style={{ width: '100%' }}>
+                      <iframe
+                        src={getEmbedUrl(submissions[currentRoundIdx].sunoUrl)}
+                        className="w-full h-full border-none"
+                        allow="autoplay; encrypted-media"
+                        title="Suno Player"
+                      />
+                    </div>
 
-                {/* Optional replay embed */}
-                <div className="w-full max-w-2xl aspect-[16/9] rounded-xl overflow-hidden bg-black border border-[rgba(255,255,255,0.05)] shadow-xl mb-8 opacity-75 hover:opacity-100 transition-opacity">
-                  <iframe
-                    src={getEmbedUrl(submissions[currentRoundIdx].sunoUrl)}
-                    className="w-full h-full border-none"
-                    allow="autoplay; encrypted-media"
-                    title={submissions[currentRoundIdx].title}
-                  />
-                </div>
-
-                <button 
-                  onClick={calculatePoints}
-                  className="btn-neon w-full max-w-md py-4 animate-pulse-glow"
-                >
-                  Découvrir le créateur
-                </button>
+                    <button 
+                      onClick={calculatePoints}
+                      className="btn-neon w-full py-4 animate-pulse-glow"
+                    >
+                      Découvrir le créateur
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <h1 className="text-4xl font-black text-white mb-2 text-center">C'était le morceau de...</h1>
+                    <h2 className="text-6xl font-black text-[hsl(var(--primary))] animate-pulse mb-8 text-center font-headings">
+                      {submissions[currentRoundIdx].nickname}
+                    </h2>
+                    <div className="w-full aspect-[16/9] rounded-xl overflow-hidden bg-black border border-white/10 shadow-xl mb-8" style={{ width: '100%' }}>
+                      <iframe
+                        src={getEmbedUrl(submissions[currentRoundIdx].sunoUrl)}
+                        className="w-full h-full border-none"
+                        allow="autoplay; encrypted-media"
+                        title="Suno Player"
+                      />
+                    </div>
+                    <button onClick={nextRevealRound} className="btn-neon w-full py-4">
+                      {currentRoundIdx + 1 < submissions.length ? 'Révéler le morceau suivant' : 'Podium final'}
+                    </button>
+                  </>
+                )}
               </div>
-            ) : (
-              <div className="flex flex-col md:flex-row w-full gap-8">
-                {/* Left Side: Song Reveal */}
-                <div className="w-full md:w-1/2 flex flex-col items-center justify-center">
-                  <h1 className="text-4xl font-black text-white mb-2 text-center">C'était le morceau de...</h1>
-                  <h2 className="text-6xl font-black text-[hsl(var(--primary))] animate-pulse mb-8 text-center">
-                    {submissions[currentRoundIdx].nickname}
-                  </h2>
-                  <div className="w-full aspect-[16/9] rounded-xl overflow-hidden bg-black border border-white/10 shadow-xl mb-8">
-                    <iframe
-                      src={getEmbedUrl(submissions[currentRoundIdx].sunoUrl)}
-                      className="w-full h-full border-none"
-                      allow="autoplay; encrypted-media"
-                      title={submissions[currentRoundIdx].title}
-                    />
-                  </div>
-                  <button onClick={nextRevealRound} className="btn-neon w-full py-4">
-                    {currentRoundIdx + 1 < submissions.length ? 'Révéler le morceau suivant' : 'Podium final'}
-                  </button>
-                </div>
 
-                {/* Right Side: Race Track */}
-                <div className="w-full md:w-1/2 flex flex-col rounded-3xl p-6" style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', width: '100%', display: 'flex', flexDirection: 'column' }}>
-                  <h3 className="font-bold text-2xl text-white mb-8 border-b pb-3" style={{ borderBottomColor: 'rgba(255,255,255,0.1)' }}>🎧 Le Hit-Parade</h3>
-                  <div className="flex flex-col gap-10 w-full mt-4" style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem', width: '100%' }}>
-                    {players.map((nickname, idx) => {
-                      const score = displayScores[nickname] || 0;
-                      const maxScore = Math.max(2000, ...(Object.values(displayScores) as number[]));
-                      const percentage = Math.min(100, Math.max(0, (score / maxScore) * 100));
-                      
-                      const gainedThisRound = roundPointsGained.filter(g => g.nickname === nickname);
-                      const totalGained = gainedThisRound.reduce((sum, g) => sum + g.points, 0);
-                      const reasons = gainedThisRound.map(g => g.reason).join(' | ');
+              {/* Right Side: Race Track */}
+              <div className="w-full md:w-1/2 flex flex-col rounded-3xl p-6" style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', width: '100%', display: 'flex', flexDirection: 'column' }}>
+                <h3 className="font-bold text-2xl text-white mb-8 border-b pb-3" style={{ borderBottomColor: 'rgba(255,255,255,0.1)' }}>🎧 Le Hit-Parade</h3>
+                <div className="flex flex-col gap-10 w-full mt-4" style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem', width: '100%' }}>
+                  {players.map((nickname, idx) => {
+                    const score = displayScores[nickname] || 0;
+                    const maxScore = Math.max(2000, ...(Object.values(displayScores) as number[]));
+                    const percentage = Math.min(100, Math.max(0, (score / maxScore) * 100));
+                    
+                    const gainedThisRound = roundPointsGained.filter(g => g.nickname === nickname);
+                    const totalGained = gainedThisRound.reduce((sum, g) => sum + g.points, 0);
+                    const reasons = gainedThisRound.map(g => g.reason).join(' | ');
 
-                      return (
-                        <div key={idx} className="flex flex-col gap-2 relative w-full" style={{ display: 'flex', flexDirection: 'column', width: '100%', marginBottom: '2rem' }}>
-                          <div className="flex justify-between items-end mb-1" style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                            <span className="font-bold text-white text-lg">{nickname}</span>
-                            <span className="text-[hsl(var(--secondary))] font-black text-xl">{score} pts</span>
-                          </div>
-                          
-                          <div className="w-full h-4 rounded-full relative shadow-inner" style={{ width: '100%', height: '16px', backgroundColor: 'rgba(255,255,255,0.1)', position: 'relative' }}>
-                            <div 
-                              className="absolute top-0 left-0 h-full rounded-full flex items-center justify-end"
-                              style={{ 
-                                width: `${percentage}%`,
-                                background: 'linear-gradient(to right, hsl(var(--primary)), hsl(var(--secondary)))',
-                                transition: 'width 1000ms ease-out',
-                                height: '100%',
-                                position: 'absolute',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'flex-end'
-                              }}
-                            >
-                               <div className="w-10 h-10 bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,0.5)] transform translate-x-5 flex items-center justify-center text-xl z-10 animate-bounce" style={{ position: 'absolute', right: '-20px', transform: 'scaleX(-1)' }}>
-                                  🏎️
+                    return (
+                      <div key={idx} className="flex flex-col gap-2 relative w-full" style={{ display: 'flex', flexDirection: 'column', width: '100%', marginBottom: '2rem' }}>
+                        <div className="flex justify-between items-end mb-1" style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                          <span className="font-bold text-white text-lg">{nickname}</span>
+                          <span className="text-[hsl(var(--secondary))] font-black text-xl">{score} pts</span>
+                        </div>
+                        
+                        <div className="w-full h-4 rounded-full relative shadow-inner" style={{ width: '100%', height: '16px', backgroundColor: 'rgba(255,255,255,0.1)', position: 'relative' }}>
+                          <div 
+                            className="absolute top-0 left-0 h-full rounded-full flex items-center justify-end"
+                            style={{ 
+                              width: `${percentage}%`,
+                              background: 'linear-gradient(to right, hsl(var(--primary)), hsl(var(--secondary)))',
+                              transition: 'width 1000ms ease-out',
+                              height: '100%',
+                              position: 'absolute',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end'
+                            }}
+                          >
+                             <div className="w-10 h-10 bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,0.5)] transform translate-x-5 flex items-center justify-center text-xl z-10 animate-bounce" style={{ position: 'absolute', right: '-20px', transform: 'scaleX(-1)' }}>
+                                🏎️
+                             </div>
+
+                             {totalGained > 0 && (
+                               <div key={animationStepIdx} className="absolute -top-14 right-0 transform translate-x-1/2 animate-fade-up-slow flex flex-col items-center" style={{ position: 'absolute', top: '-60px', right: '-20px', zIndex: 50 }}>
+                                  <span className="font-black text-3xl" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255, 215, 0, 0.8), 0 2px 4px rgba(0,0,0,0.8)' }}>+{totalGained}</span>
+                                  <span className="font-bold px-3 py-1 rounded-full whitespace-nowrap mt-1 shadow-lg" style={{ backgroundColor: 'hsl(var(--primary))', color: 'white', fontSize: '12px', border: '1px solid rgba(255,255,255,0.3)' }}>{reasons}</span>
                                </div>
-
-                               {totalGained > 0 && (
-                                 <div key={animationStepIdx} className="absolute -top-14 right-0 transform translate-x-1/2 animate-fade-up-slow flex flex-col items-center" style={{ position: 'absolute', top: '-60px', right: '-20px', zIndex: 50 }}>
-                                    <span className="font-black text-3xl" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255, 215, 0, 0.8), 0 2px 4px rgba(0,0,0,0.8)' }}>+{totalGained}</span>
-                                    <span className="font-bold px-3 py-1 rounded-full whitespace-nowrap mt-1 shadow-lg" style={{ backgroundColor: 'hsl(var(--primary))', color: 'white', fontSize: '12px', border: '1px solid rgba(255,255,255,0.3)' }}>{reasons}</span>
-                                 </div>
-                               )}
-                            </div>
+                             )}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            )}
+            </div>
           </div>
         )}
 
