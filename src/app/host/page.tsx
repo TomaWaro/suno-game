@@ -45,7 +45,7 @@ export default function HostPage() {
   // Kahoot-style Suspense & Podium states
   const [isSuspense, setIsSuspense] = useState<boolean>(false);
   const [suspenseName, setSuspenseName] = useState<string>('');
-  const [podiumRevealStep, setPodiumRevealStep] = useState<number>(3); 
+  const [podiumRevealStep, setPodiumRevealStep] = useState<number>(4); 
 
   const pollingIntervalRef = useRef<any>(null);
   const isUpdatingRef = useRef<boolean>(false);
@@ -113,13 +113,17 @@ export default function HostPage() {
   // Automatic Kahoot-style Podium Animation Sequence
   useEffect(() => {
     if (phase === 'LEADERBOARD') {
-      if (podiumRevealStep === 3) {
+      if (podiumRevealStep === 4) {
+        const timer = setTimeout(() => setPodiumRevealStep(3), 1000);
+        return () => clearTimeout(timer);
+      } else if (podiumRevealStep === 3) {
         const timer = setTimeout(() => setPodiumRevealStep(2), 2000);
         return () => clearTimeout(timer);
       } else if (podiumRevealStep === 2) {
         const timer = setTimeout(() => setPodiumRevealStep(1), 2000);
         return () => clearTimeout(timer);
       } else if (podiumRevealStep === 1) {
+        // Drumroll suspense for 1st place
         const timer = setTimeout(() => {
           setPodiumRevealStep(0);
           confetti({
@@ -130,8 +134,8 @@ export default function HostPage() {
         }, 4000);
         return () => clearTimeout(timer);
       }
-    } else if (podiumRevealStep !== 3) {
-      setPodiumRevealStep(3); // Reset when not in leaderboard
+    } else if (podiumRevealStep !== 4) {
+      setPodiumRevealStep(4); // Reset when not in leaderboard
     }
   }, [phase, podiumRevealStep]);
 
@@ -215,7 +219,7 @@ export default function HostPage() {
     setAnimationSteps([]);
     setAnimationStepIdx(-1);
     setRevealedThisRound(false);
-    setPodiumRevealStep(3);
+    setPodiumRevealStep(4);
     sendAction('SET_STATE', {
       phase: 'REVEAL',
       currentRoundIdx: 0,
@@ -356,7 +360,7 @@ export default function HostPage() {
   const resetGame = () => {
     sendAction('RESET');
     setRoundPointsGained([]);
-    setPodiumRevealStep(3);
+    setPodiumRevealStep(4);
   };
 
   const copyToClipboard = () => {
@@ -382,17 +386,21 @@ export default function HostPage() {
 
   return (
     <main className="relative min-h-screen w-full flex flex-col items-center justify-center p-6 overflow-hidden bg-[hsl(var(--bg-dark))]">
-      <div className="glow-bg glow-primary top-[-100px] left-[-100px]" />
-      <div className="glow-bg glow-accent bottom-[-100px] right-[-100px]" />
+      {phase !== 'LEADERBOARD' && (
+        <div 
+          className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat z-0" 
+          style={{ backgroundImage: 'url(/concert-bg.png)', backgroundColor: '#0f0a1f' }}
+        />
+      )}
+      
+      <div className="glow-bg glow-primary top-[-100px] left-[-100px] z-0" />
+      <div className="glow-bg glow-accent bottom-[-100px] right-[-100px] z-0" />
 
       <div className="w-full max-w-5xl z-10">
         
         {/* LOBBY PHASE */}
         {phase === 'LOBBY' && (
-          <div 
-            className="fixed inset-0 w-full h-full bg-cover bg-center bg-no-repeat z-50 overflow-hidden" 
-            style={{ backgroundImage: 'url(/concert-bg.png)', backgroundColor: '#0f0a1f' }}
-          >
+          <div className="fixed inset-0 w-full h-full bg-transparent z-50 overflow-hidden">
             {/* Top White Banner (Kahoot Style) */}
             <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[95%] max-w-6xl bg-white rounded-xl shadow-2xl flex flex-row items-center justify-between p-6 z-20">
               <div className="flex flex-col pl-6">
@@ -480,7 +488,7 @@ export default function HostPage() {
         
         {/* SUBMISSION PHASE */}
         {phase === 'SUBMISSION' && (
-          <div className="w-full min-h-screen flex flex-col pt-32 px-8">
+          <div className="fixed inset-0 w-full h-full bg-transparent z-50 overflow-hidden">
             <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[95%] max-w-6xl bg-white rounded-xl shadow-2xl flex flex-row items-center justify-between p-6 z-20">
               <div className="flex flex-col pl-6">
                 <span className="text-slate-600 font-bold text-xl">Soumission des morceaux</span>
@@ -495,7 +503,7 @@ export default function HostPage() {
             </div>
 
             {/* Launch Game Button */}
-            <div className="absolute top-48 right-[2.5%] md:right-[5%] z-20 flex flex-col gap-3 w-80">
+            <div className="absolute top-52 right-[2.5%] md:right-[5%] z-20 flex flex-col gap-3 w-80">
               <button
                 disabled={submissions.length === 0}
                 onClick={() => startGuessingPhase(0)}
@@ -509,20 +517,40 @@ export default function HostPage() {
               </button>
             </div>
 
-            {/* Players Grid */}
-            <div className="flex-1 mt-20 flex flex-wrap content-start gap-4 justify-start max-w-6xl mx-auto w-full">
-              {players.map((nickname, idx) => {
-                const isReady = readyPlayers.includes(nickname);
-                return (
-                  <div 
-                    key={idx} 
-                    className={`w-48 h-16 text-white font-extrabold text-xl px-4 py-2 rounded shadow-md flex items-center justify-between overflow-hidden transition-all duration-300 ${isReady ? 'bg-[#10b981]' : 'bg-[#8b5cf6]'}`}
-                  >
-                    <span className="truncate">{nickname}</span>
-                    {isReady && <span className="ml-2 bg-white/20 rounded-full w-6 h-6 flex items-center justify-center text-sm">✓</span>}
+            {/* EXACT CENTER: Players Grid Area */}
+            <div className="absolute top-[55%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-5xl z-10 flex flex-col">
+              
+              {/* Player Count Badge - Top Left relative to the grid */}
+              <div className="flex justify-start mb-4">
+                <div className="bg-white/10 backdrop-blur-md px-6 py-2 rounded-full border border-white/20 shadow-xl inline-flex items-center gap-2">
+                  <span className="text-white font-black text-2xl">{players.length}</span>
+                  <span className="text-white/90 font-bold text-lg uppercase tracking-wider">Joueur{players.length > 1 ? 's' : ''}</span>
+                </div>
+              </div>
+              
+              {/* Grid block */}
+              <div className="w-full flex flex-wrap content-start gap-4 justify-center p-8 min-h-[400px] bg-black/40 backdrop-blur-sm rounded-3xl border border-white/10 shadow-2xl relative">
+                <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-[#8b5cf6]/20 to-transparent pointer-events-none rounded-b-3xl" />
+                
+                {players.length === 0 ? (
+                  <div className="w-full flex items-center justify-center mt-20 z-10">
+                    <span className="text-white/80 text-3xl font-bold animate-pulse">En attente de joueurs...</span>
                   </div>
-                );
-              })}
+                ) : (
+                  players.map((nickname, idx) => {
+                    const isReady = readyPlayers.includes(nickname);
+                    return (
+                      <div 
+                        key={idx} 
+                        className={`w-48 h-16 text-white font-extrabold text-xl px-4 py-2 rounded-lg shadow-[0_4px_15px_rgba(139,92,246,0.6)] flex items-center justify-between overflow-hidden transition-all duration-300 z-10 ${isReady ? 'bg-[#10b981]' : 'bg-[#8b5cf6]'}`}
+                      >
+                        <span className="truncate drop-shadow-md">{nickname}</span>
+                        {isReady && <span className="ml-2 bg-white/20 rounded-full min-w-6 w-6 h-6 flex items-center justify-center text-sm">✓</span>}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -715,11 +743,11 @@ export default function HostPage() {
               {sortedLeaderboard[1] && (
                 <div className="flex flex-col items-center w-32 md:w-48 transition-all duration-1000 relative">
                   {podiumRevealStep <= 2 ? (
-                    <div className="flex flex-col items-center animate-bounce-in mb-2 z-10">
+                    <div className="flex flex-col items-center animate-bounce-in mb-6 z-10">
                       <span className="font-black text-white text-2xl truncate max-w-full drop-shadow-lg">{sortedLeaderboard[1].nickname}</span>
                     </div>
                   ) : (
-                    <div className="h-[40px]" />
+                    <div className="h-[56px]" />
                   )}
                   <div 
                     className="w-full bg-[#8b5cf6] rounded-t-sm shadow-2xl relative flex flex-col items-center justify-start pt-6 animate-rise-up z-0"
@@ -729,7 +757,7 @@ export default function HostPage() {
                       <span className="text-[#8b5cf6] -rotate-45 font-black text-3xl font-headings">2</span>
                     </div>
                     {podiumRevealStep <= 2 && (
-                      <span className="text-white font-black text-xl mt-8 drop-shadow-md animate-fade-in">{sortedLeaderboard[1].score} pts</span>
+                      <span className="text-white font-black text-xl mt-12 drop-shadow-md animate-fade-in">{sortedLeaderboard[1].score} pts</span>
                     )}
                   </div>
                 </div>
@@ -738,26 +766,26 @@ export default function HostPage() {
               {/* 1st Place Column */}
               {sortedLeaderboard[0] && (
                 <div className="flex flex-col items-center w-40 md:w-56 transition-all duration-1000 relative">
-                  {podiumRevealStep <= 1 ? (
-                    <div className="flex flex-col items-center animate-bounce-in mb-2 z-10 relative">
-                      <span className="text-6xl absolute -top-14 animate-bounce drop-shadow-[0_0_15px_rgba(255,215,0,0.8)]">👑</span>
-                      <span className="font-black text-white text-3xl truncate max-w-full drop-shadow-lg mt-2">{sortedLeaderboard[0].nickname}</span>
+                  {podiumRevealStep <= 0 ? (
+                    <div className="flex flex-col items-center animate-bounce-in mb-6 z-10 relative">
+                      <span className="text-7xl absolute -top-16 animate-bounce drop-shadow-[0_0_15px_rgba(255,215,0,0.8)]">👑</span>
+                      <span className="font-black text-white text-3xl truncate max-w-full drop-shadow-lg mt-4">{sortedLeaderboard[0].nickname}</span>
                     </div>
                   ) : (
-                    <div className="h-[60px]" />
+                    <div className="h-[80px]" />
                   )}
                   <div 
                     className="w-full bg-[#8b5cf6] rounded-t-sm shadow-2xl relative flex flex-col items-center justify-start pt-6 animate-rise-up z-0"
-                    style={{ height: podiumRevealStep <= 1 ? '300px' : '0px', transition: 'height 1s ease-out' }}
+                    style={{ height: podiumRevealStep <= 0 ? '300px' : '0px', transition: 'height 1s ease-out' }}
                   >
-                    {podiumRevealStep <= 1 && (
+                    {podiumRevealStep <= 0 && (
                        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-transparent to-white/20 animate-pulse-gold pointer-events-none rounded-t-sm" />
                     )}
                     <div className="w-20 h-20 bg-white rotate-45 flex items-center justify-center rounded-sm shadow-inner z-10">
                       <span className="text-[#8b5cf6] -rotate-45 font-black text-5xl font-headings">1</span>
                     </div>
-                    {podiumRevealStep <= 1 && (
-                      <span className="text-white font-black text-2xl mt-10 drop-shadow-md animate-fade-in z-10">{sortedLeaderboard[0].score} pts</span>
+                    {podiumRevealStep <= 0 && (
+                      <span className="text-white font-black text-2xl mt-14 drop-shadow-md animate-fade-in z-10">{sortedLeaderboard[0].score} pts</span>
                     )}
                   </div>
                 </div>
@@ -767,11 +795,11 @@ export default function HostPage() {
               {sortedLeaderboard[2] && (
                 <div className="flex flex-col items-center w-28 md:w-44 transition-all duration-1000 relative">
                   {podiumRevealStep <= 3 ? (
-                    <div className="flex flex-col items-center animate-bounce-in mb-2 z-10">
+                    <div className="flex flex-col items-center animate-bounce-in mb-6 z-10">
                       <span className="font-black text-white text-xl truncate max-w-full drop-shadow-lg">{sortedLeaderboard[2].nickname}</span>
                     </div>
                   ) : (
-                    <div className="h-[32px]" />
+                    <div className="h-[48px]" />
                   )}
                   <div 
                     className="w-full bg-[#8b5cf6] rounded-t-sm shadow-2xl relative flex flex-col items-center justify-start pt-6 animate-rise-up z-0"
@@ -781,7 +809,7 @@ export default function HostPage() {
                       <span className="text-[#8b5cf6] -rotate-45 font-black text-2xl font-headings">3</span>
                     </div>
                     {podiumRevealStep <= 3 && (
-                      <span className="text-white font-black text-lg mt-6 drop-shadow-md animate-fade-in">{sortedLeaderboard[2].score} pts</span>
+                      <span className="text-white font-black text-lg mt-8 drop-shadow-md animate-fade-in">{sortedLeaderboard[2].score} pts</span>
                     )}
                   </div>
                 </div>
