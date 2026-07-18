@@ -360,7 +360,17 @@ function PlayLobbyContent() {
                     <label className="text-xs text-[rgba(255,255,255,0.6)] uppercase tracking-wider font-bold mb-1 text-center">
                       Qui a créé ce morceau ?
                     </label>
-                    <div className="grid grid-cols-2 gap-3 w-full mt-2 flex-1">
+                    <div 
+                      style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: 'repeat(2, 1fr)', 
+                        gridAutoRows: '1fr', 
+                        gap: '12px', 
+                        width: '100%', 
+                        flexGrow: 1, 
+                        marginTop: '8px' 
+                      }}
+                    >
                       {playersList
                         .filter((p) => p !== nickname) // Exclude voter's own nickname
                         .map((name, idx) => {
@@ -370,16 +380,18 @@ function PlayLobbyContent() {
                             <button
                               key={idx}
                               onClick={() => setCreatorGuess(name)}
-                              className="p-4 rounded-2xl text-white text-lg font-black tracking-wide transition-all active:scale-95 flex flex-col items-center justify-center min-h-[90px] shadow-lg"
+                              className="rounded-2xl text-white text-xl font-black tracking-wide transition-all active:scale-95 flex flex-col items-center justify-center shadow-lg border-b-8 border-b-black/30"
                               style={{
                                 backgroundColor: buttonColor,
-                                border: isSelected ? '4px solid #ffffff' : '4px solid transparent',
-                                boxShadow: isSelected ? `0 0 20px ${buttonColor}` : 'none',
+                                border: isSelected ? '4px solid #ffffff' : 'none',
+                                boxShadow: isSelected ? `0 0 25px ${buttonColor}` : 'none',
                                 opacity: isSelected ? 1 : 0.85,
+                                textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                                minHeight: '90px'
                               }}
                             >
-                              <span className="text-2xl mb-1">{['🎵', '🎸', '🎹', '🥁', '🎷', '🎤', '🎻', '🎺'][idx % 8]}</span>
-                              <span className="truncate max-w-full font-headings text-sm">{name}</span>
+                              <span className="text-3xl mb-1">{['🎵', '🎸', '🎹', '🥁', '🎷', '🎤', '🎻', '🎺'][idx % 8]}</span>
+                              <span className="truncate max-w-full font-headings text-base">{name}</span>
                             </button>
                           );
                         })}
