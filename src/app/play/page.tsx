@@ -44,6 +44,25 @@ function PlayLobbyContent() {
     }
   }, [searchParams]);
 
+  // Attempt auto-join from localStorage on mount
+  useEffect(() => {
+    const savedSession = localStorage.getItem('sunogame_session');
+    if (savedSession) {
+      try {
+        const { savedRoom, savedNickname } = JSON.parse(savedSession);
+        if (savedRoom && savedNickname) {
+          setRoomCode(savedRoom);
+          setNickname(savedNickname);
+          // Auto trigger join if we have saved session
+          joinRoom(savedRoom, savedNickname);
+        }
+      } catch (e) {
+        console.error('Failed to parse session', e);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Clean up polling on unmount
   useEffect(() => {
     return () => {
@@ -86,10 +105,9 @@ function PlayLobbyContent() {
     }
   }, [serverVotes, currentRoundIdx, phase, nickname]);
 
-  // Handle room joining
-  const handleJoin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!roomCode || !nickname) return;
+  // Core join logic
+  const joinRoom = async (targetRoom: string, targetNickname: string) => {
+    if (!targetRoom || !targetNickname) return;
 
     setLoading(true);
     setError('');
@@ -98,18 +116,26 @@ function PlayLobbyContent() {
       const res = await fetch('/api/room/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomCode, nickname }),
+        body: JSON.stringify({ roomCode: targetRoom, nickname: targetNickname }),
       });
 
       if (!res.ok) {
         const data = await res.json();
         setError(data.error || 'Impossible de rejoindre le salon.');
         setLoading(false);
+        // Clear invalid session
+        localStorage.removeItem('sunogame_session');
         return;
       }
 
       setJoined(true);
       setLoading(false);
+      
+      // Save session for auto-rejoin on refresh
+      localStorage.setItem('sunogame_session', JSON.stringify({
+        savedRoom: targetRoom,
+        savedNickname: targetNickname
+      }));
 
       // Start polling state
       pollingIntervalRef.current = setInterval(async () => {
@@ -149,6 +175,12 @@ function PlayLobbyContent() {
       setError('Une erreur est survenue.');
       setLoading(false);
     }
+  };
+
+  // Form submit handler
+  const handleJoin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    joinRoom(roomCode, nickname);
   };
 
   // Submit Suno URL anonymously
