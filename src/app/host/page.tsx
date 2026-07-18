@@ -417,25 +417,15 @@ export default function HostPage() {
               )}
             </div>
 
-            {/* Start Button & Settings Container (Right Aligned) */}
-            <div className="absolute top-48 right-[2.5%] md:right-[5%] z-20 flex flex-col gap-3 w-72">
-              <div className="bg-white/20 backdrop-blur-md border border-white/30 p-4 rounded-xl shadow-xl">
-                <label className="text-xs text-white uppercase font-bold tracking-widest mb-2 block text-center">Thème Imposé</label>
-                <input 
-                  type="text" 
-                  value={theme} 
-                  onChange={(e) => setTheme(e.target.value)}
-                  className="w-full bg-white text-slate-900 font-bold rounded-lg px-3 py-2 text-center focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
-                  placeholder="Ex: Chanson d'été..."
-                />
-              </div>
+            {/* Start Button Container (Right Aligned) */}
+            <div className="absolute top-48 right-[2.5%] md:right-[5%] z-20 flex flex-col gap-3 w-80">
               <button 
                 disabled={players.length === 0}
                 onClick={startSubmissionPhase}
-                className={`w-full py-4 rounded-xl font-black text-2xl uppercase tracking-wider text-white transition-all shadow-[0_6px_0_rgba(0,0,0,0.3)] ${
+                className={`w-full py-6 rounded-2xl font-black text-3xl uppercase tracking-wider text-white transition-all shadow-[0_8px_0_rgba(0,0,0,0.4)] ${
                   players.length === 0 
                     ? 'bg-slate-500 opacity-50 cursor-not-allowed' 
-                    : 'bg-blue-600 hover:bg-blue-500 hover:-translate-y-1 hover:shadow-[0_8px_0_rgba(0,0,0,0.3)] active:translate-y-2 active:shadow-none'
+                    : 'bg-[#8b5cf6] hover:bg-[#7c3aed] hover:-translate-y-2 hover:shadow-[0_12px_0_rgba(0,0,0,0.4)] active:translate-y-2 active:shadow-none'
                 }`}
               >
                 Démarrer
@@ -443,12 +433,14 @@ export default function HostPage() {
             </div>
 
             {/* Players Grid Area */}
-            <div className="flex-1 mt-20 flex flex-wrap content-start gap-4 justify-start max-w-6xl mx-auto w-full">
-              <div className="w-full mb-4 flex items-center justify-between">
-                <div className="bg-black/30 backdrop-blur-sm px-6 py-2 rounded-full border border-white/10 shadow-inner">
+            <div className="flex-1 mt-20 flex flex-col gap-4 max-w-6xl mx-auto w-full">
+              <div className="w-full flex justify-end px-4">
+                <div className="bg-white/10 backdrop-blur-sm px-6 py-2 rounded-full border border-white/20 shadow-lg">
                   <span className="text-white font-bold text-xl">{players.length} Joueur{players.length > 1 ? 's' : ''}</span>
                 </div>
               </div>
+              
+              <div className="w-full flex flex-wrap content-start gap-4 justify-start p-4">
               
               {players.length === 0 ? (
                 <div className="w-full flex items-center justify-center mt-20">
@@ -464,6 +456,7 @@ export default function HostPage() {
                   </div>
                 ))
               )}
+              </div>
             </div>
           </div>
         )}
@@ -473,8 +466,8 @@ export default function HostPage() {
           <div className="w-full min-h-screen flex flex-col pt-32 px-8">
             <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[95%] max-w-6xl bg-white rounded-xl shadow-2xl flex flex-row items-center justify-between p-6 z-20">
               <div className="flex flex-col pl-6">
-                <span className="text-slate-600 font-bold text-xl">Thème imposé pour cette partie :</span>
-                <span className="text-slate-900 font-black text-4xl md:text-5xl tracking-tight mt-2">"{theme}"</span>
+                <span className="text-slate-600 font-bold text-xl">Soumission des morceaux</span>
+                <span className="text-slate-900 font-black text-4xl md:text-5xl tracking-tight mt-2">Création en cours...</span>
               </div>
               <div className="pr-6">
                 <div className="bg-slate-100 px-6 py-4 rounded-xl flex flex-col items-center">
@@ -485,14 +478,14 @@ export default function HostPage() {
             </div>
 
             {/* Launch Game Button */}
-            <div className="absolute top-48 right-[2.5%] md:right-[5%] z-20 flex flex-col gap-3 w-72">
+            <div className="absolute top-48 right-[2.5%] md:right-[5%] z-20 flex flex-col gap-3 w-80">
               <button
                 disabled={submissions.length === 0}
                 onClick={() => startGuessingPhase(0)}
-                className={`w-full py-4 rounded-xl font-black text-xl tracking-wider text-white transition-all shadow-[0_6px_0_rgba(0,0,0,0.3)] ${
+                className={`w-full py-6 rounded-2xl font-black text-2xl uppercase tracking-wider text-white transition-all shadow-[0_8px_0_rgba(0,0,0,0.4)] ${
                   submissions.length === 0 
                     ? 'bg-slate-500 opacity-50 cursor-not-allowed' 
-                    : 'bg-blue-600 hover:bg-blue-500 hover:-translate-y-1 hover:shadow-[0_8px_0_rgba(0,0,0,0.3)] active:translate-y-2 active:shadow-none'
+                    : 'bg-[#8b5cf6] hover:bg-[#7c3aed] hover:-translate-y-2 hover:shadow-[0_12px_0_rgba(0,0,0,0.4)] active:translate-y-2 active:shadow-none'
                 }`}
               >
                 Lancer les votes !
@@ -703,70 +696,76 @@ export default function HostPage() {
               
               {/* 2nd Place Column */}
               {sortedLeaderboard[1] && (
-                <div className="flex flex-col items-center w-32 md:w-48 transition-all duration-1000">
+                <div className="flex flex-col items-center w-32 md:w-48 transition-all duration-1000 relative">
                   {podiumRevealStep <= 2 ? (
-                    <div className="flex flex-col items-center animate-bounce-in bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl mb-4 shadow-xl">
-                      <span className="font-bold text-white text-xl truncate max-w-full mb-1">{sortedLeaderboard[1].nickname}</span>
-                      <span className="text-white/80 font-black text-lg bg-black/40 px-3 py-1 rounded-md">{sortedLeaderboard[1].score}</span>
+                    <div className="flex flex-col items-center animate-bounce-in mb-2 z-10">
+                      <span className="font-black text-white text-2xl truncate max-w-full drop-shadow-lg">{sortedLeaderboard[1].nickname}</span>
                     </div>
                   ) : (
-                    <div className="h-[88px]" />
+                    <div className="h-[40px]" />
                   )}
                   <div 
-                    className="w-full bg-[#8b5cf6] rounded-t-sm shadow-2xl relative flex flex-col items-center justify-start pt-6 animate-rise-up"
+                    className="w-full bg-[#8b5cf6] rounded-t-sm shadow-2xl relative flex flex-col items-center justify-start pt-6 animate-rise-up z-0"
                     style={{ height: podiumRevealStep <= 2 ? '200px' : '0px', transition: 'height 1s ease-out' }}
                   >
-                    <div className="w-16 h-16 bg-white rotate-45 flex items-center justify-center rounded-sm">
+                    <div className="w-16 h-16 bg-white rotate-45 flex items-center justify-center rounded-sm shadow-inner z-10">
                       <span className="text-[#8b5cf6] -rotate-45 font-black text-3xl font-headings">2</span>
                     </div>
+                    {podiumRevealStep <= 2 && (
+                      <span className="text-white font-black text-xl mt-8 drop-shadow-md animate-fade-in">{sortedLeaderboard[1].score} pts</span>
+                    )}
                   </div>
                 </div>
               )}
 
               {/* 1st Place Column */}
               {sortedLeaderboard[0] && (
-                <div className="flex flex-col items-center w-40 md:w-56 transition-all duration-1000">
+                <div className="flex flex-col items-center w-40 md:w-56 transition-all duration-1000 relative">
                   {podiumRevealStep <= 1 ? (
-                    <div className="flex flex-col items-center animate-bounce-in bg-white/10 backdrop-blur-md px-6 py-3 rounded-xl mb-4 shadow-[0_0_30px_rgba(255,215,0,0.5)] relative">
-                      <span className="text-5xl absolute -top-8 animate-bounce">👑</span>
-                      <span className="font-black text-white text-2xl truncate max-w-full mb-1 mt-2">{sortedLeaderboard[0].nickname}</span>
-                      <span className="text-white/90 font-black text-xl bg-black/50 px-4 py-1 rounded-md">{sortedLeaderboard[0].score}</span>
+                    <div className="flex flex-col items-center animate-bounce-in mb-2 z-10 relative">
+                      <span className="text-6xl absolute -top-14 animate-bounce drop-shadow-[0_0_15px_rgba(255,215,0,0.8)]">👑</span>
+                      <span className="font-black text-white text-3xl truncate max-w-full drop-shadow-lg mt-2">{sortedLeaderboard[0].nickname}</span>
                     </div>
                   ) : (
-                    <div className="h-[120px]" />
+                    <div className="h-[60px]" />
                   )}
                   <div 
-                    className="w-full bg-[#8b5cf6] rounded-t-sm shadow-2xl relative flex flex-col items-center justify-start pt-6 animate-rise-up"
+                    className="w-full bg-[#8b5cf6] rounded-t-sm shadow-2xl relative flex flex-col items-center justify-start pt-6 animate-rise-up z-0"
                     style={{ height: podiumRevealStep <= 1 ? '300px' : '0px', transition: 'height 1s ease-out' }}
                   >
                     {podiumRevealStep <= 1 && (
-                       <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-transparent to-white/20 animate-pulse-gold pointer-events-none" />
+                       <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-transparent to-white/20 animate-pulse-gold pointer-events-none rounded-t-sm" />
                     )}
-                    <div className="w-20 h-20 bg-white rotate-45 flex items-center justify-center rounded-sm">
+                    <div className="w-20 h-20 bg-white rotate-45 flex items-center justify-center rounded-sm shadow-inner z-10">
                       <span className="text-[#8b5cf6] -rotate-45 font-black text-5xl font-headings">1</span>
                     </div>
+                    {podiumRevealStep <= 1 && (
+                      <span className="text-white font-black text-2xl mt-10 drop-shadow-md animate-fade-in z-10">{sortedLeaderboard[0].score} pts</span>
+                    )}
                   </div>
                 </div>
               )}
 
               {/* 3rd Place Column */}
               {sortedLeaderboard[2] && (
-                <div className="flex flex-col items-center w-28 md:w-44 transition-all duration-1000">
+                <div className="flex flex-col items-center w-28 md:w-44 transition-all duration-1000 relative">
                   {podiumRevealStep <= 3 ? (
-                    <div className="flex flex-col items-center animate-bounce-in bg-white/10 backdrop-blur-md px-3 py-2 rounded-xl mb-4 shadow-xl">
-                      <span className="font-bold text-white text-lg truncate max-w-full mb-1">{sortedLeaderboard[2].nickname}</span>
-                      <span className="text-white/80 font-black text-md bg-black/40 px-2 py-1 rounded-md">{sortedLeaderboard[2].score}</span>
+                    <div className="flex flex-col items-center animate-bounce-in mb-2 z-10">
+                      <span className="font-black text-white text-xl truncate max-w-full drop-shadow-lg">{sortedLeaderboard[2].nickname}</span>
                     </div>
                   ) : (
-                    <div className="h-[80px]" />
+                    <div className="h-[32px]" />
                   )}
                   <div 
-                    className="w-full bg-[#8b5cf6] rounded-t-sm shadow-2xl relative flex flex-col items-center justify-start pt-6 animate-rise-up"
+                    className="w-full bg-[#8b5cf6] rounded-t-sm shadow-2xl relative flex flex-col items-center justify-start pt-6 animate-rise-up z-0"
                     style={{ height: podiumRevealStep <= 3 ? '130px' : '0px', transition: 'height 1s ease-out' }}
                   >
-                    <div className="w-14 h-14 bg-white rotate-45 flex items-center justify-center rounded-sm">
+                    <div className="w-14 h-14 bg-white rotate-45 flex items-center justify-center rounded-sm shadow-inner z-10">
                       <span className="text-[#8b5cf6] -rotate-45 font-black text-2xl font-headings">3</span>
                     </div>
+                    {podiumRevealStep <= 3 && (
+                      <span className="text-white font-black text-lg mt-6 drop-shadow-md animate-fade-in">{sortedLeaderboard[2].score} pts</span>
+                    )}
                   </div>
                 </div>
               )}

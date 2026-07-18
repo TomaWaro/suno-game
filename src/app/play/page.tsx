@@ -294,10 +294,6 @@ function PlayLobbyContent() {
           <div className="w-full glass-panel p-8 flex flex-col z-10 animate-fade-in">
             <h2 className="text-3xl font-black text-center text-white mb-6 font-headings">Création du morceau</h2>
             
-            <div className="bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-2xl p-5 text-center mb-6">
-              <span className="text-[10px] text-[rgba(255,255,255,0.4)] uppercase tracking-wider block mb-1">Thème imposé</span>
-              <p className="text-lg font-black text-[hsl(var(--primary))]">"{theme}"</p>
-            </div>
 
             {submittedSong ? (
               <div className="text-center p-8 bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.05)] rounded-2xl">
