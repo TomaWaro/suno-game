@@ -11,6 +11,11 @@ interface PlayerPoints {
   reason: string;
 }
 
+const getEmbedUrl = (url: string) => {
+  if (!url) return '';
+  return url.replace('/song/', '/embed/');
+};
+
 export default function HostPage() {
   // Room identifiers
   const [roomCode, setRoomCode] = useState<string>('');
@@ -406,7 +411,7 @@ export default function HostPage() {
             {submissions[currentRoundIdx] && (
               <div className="w-full max-w-3xl aspect-[16/9] rounded-2xl overflow-hidden bg-black border border-[rgba(255,255,255,0.1)] shadow-2xl mb-8">
                 <iframe
-                  src={submissions[currentRoundIdx].sunoUrl}
+                  src={getEmbedUrl(submissions[currentRoundIdx].sunoUrl)}
                   className="w-full h-full border-none"
                   allow="autoplay; encrypted-media"
                   title={submissions[currentRoundIdx].title}
@@ -454,7 +459,7 @@ export default function HostPage() {
                 {/* Optional replay embed */}
                 <div className="w-full max-w-2xl aspect-[16/9] rounded-xl overflow-hidden bg-black border border-[rgba(255,255,255,0.05)] shadow-xl mb-8 opacity-75 hover:opacity-100 transition-opacity">
                   <iframe
-                    src={submissions[currentRoundIdx].sunoUrl}
+                    src={getEmbedUrl(submissions[currentRoundIdx].sunoUrl)}
                     className="w-full h-full border-none"
                     allow="autoplay; encrypted-media"
                     title={submissions[currentRoundIdx].title}
