@@ -38,6 +38,8 @@ export default function HostPage() {
   // Local inputs
   const [theme, setTheme] = useState<string>('Un morceau épique sur un codeur fatigué');
   const [roundPointsGained, setRoundPointsGained] = useState<PlayerPoints[]>([]);
+  const [animationSteps, setAnimationSteps] = useState<PlayerPoints[][]>([]);
+  const [animationStepIdx, setAnimationStepIdx] = useState<number>(-1);
   const [copied, setCopied] = useState(false);
   const [joinUrl, setJoinUrl] = useState<string>('');
 
@@ -72,6 +74,38 @@ export default function HostPage() {
       setDisplayScores(scores);
     }
   }, [scores, phase, revealedThisRound]);
+
+  // Handle sequential animation steps
+  useEffect(() => {
+    if (phase === 'REVEAL' && revealedThisRound && animationStepIdx >= 0 && animationStepIdx < animationSteps.length) {
+      const currentStepPoints = animationSteps[animationStepIdx];
+      
+      // 1. Show floating text
+      setRoundPointsGained(currentStepPoints);
+      
+      // 2. Advance car
+      setDisplayScores(prev => {
+        const next = { ...prev };
+        currentStepPoints.forEach(p => {
+          next[p.nickname] = (next[p.nickname] || 0) + p.points;
+        });
+        return next;
+      });
+
+      // 3. Schedule next step
+      const timer = setTimeout(() => {
+        setAnimationStepIdx(idx => idx + 1);
+      }, 2500);
+
+      return () => clearTimeout(timer);
+    } else if (animationStepIdx === animationSteps.length && animationSteps.length > 0) {
+      // Sequence finished
+      const timer = setTimeout(() => {
+        setRoundPointsGained([]); // hide popups smoothly after a while
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [phase, revealedThisRound, animationStepIdx, animationSteps]);
 
   // 2. Initialize room state on server and start polling
   useEffect(() => {
@@ -150,6 +184,8 @@ export default function HostPage() {
 
   const startRevealPhase = () => {
     setRoundPointsGained([]);
+    setAnimationSteps([]);
+    setAnimationStepIdx(-1);
     setRevealedThisRound(false);
     sendAction('SET_STATE', {
       phase: 'REVEAL',
@@ -166,22 +202,23 @@ export default function HostPage() {
     const G = roundVotes.filter((v) => v.guess === creator).length;
     const P = players.length;
 
-    const pointsList: PlayerPoints[] = [];
-    const scoreDelta: ScoreState = {};
+    const steps: PlayerPoints[][] = [];
 
     // 1. Guesser points (500 pts)
+    const guesserPoints: PlayerPoints[] = [];
     roundVotes.forEach((v) => {
       if (v.guess === creator) {
-        pointsList.push({
+        guesserPoints.push({
           nickname: v.voter,
           points: 500,
           reason: 'Bonne réponse ! (+500)',
         });
-        scoreDelta[v.voter] = (scoreDelta[v.voter] || 0) + 500;
       }
     });
+    if (guesserPoints.length > 0) steps.push(guesserPoints);
 
     // 2. Creator points (Sweet Spot Calculation)
+    const sweetSpotPoints: PlayerPoints[] = [];
     if (G >= 1) {
       const maxCreatorPoints = 1000;
       const decay = 0.6;
@@ -191,52 +228,55 @@ export default function HostPage() {
         creatorBasePoints = Math.round(maxCreatorPoints * (1 - decay * ((G - 1) / (P - 2))));
       }
       
-      pointsList.push({
+      sweetSpotPoints.push({
         nickname: creator,
         points: creatorBasePoints,
         reason: `Sweet Spot: Trouvé par ${G} joueur(s) (+${creatorBasePoints})`,
       });
-      scoreDelta[creator] = (scoreDelta[creator] || 0) + creatorBasePoints;
     } else {
-      pointsList.push({
+      sweetSpotPoints.push({
         nickname: creator,
         points: 0,
         reason: 'Sweet Spot: Personne ne vous a trouvé (+0)',
       });
     }
+    steps.push(sweetSpotPoints);
 
     // 3. Rating Bonus (Average star rating * 100)
+    const ratingPointsList: PlayerPoints[] = [];
     const validRatings = roundVotes.filter((v) => v.rating > 0);
     if (validRatings.length > 0) {
       const averageRating = validRatings.reduce((sum, v) => sum + v.rating, 0) / validRatings.length;
       const ratingPoints = Math.round(averageRating * 100);
       
-      pointsList.push({
+      ratingPointsList.push({
         nickname: creator,
         points: ratingPoints,
         reason: `Note moyenne: ${averageRating.toFixed(1)}/5★ (+${ratingPoints})`,
       });
-      scoreDelta[creator] = (scoreDelta[creator] || 0) + ratingPoints;
     }
+    if (ratingPointsList.length > 0) steps.push(ratingPointsList);
 
-    // Update global state scores on Redis
-    const nextScores = { ...scores };
-    Object.keys(scoreDelta).forEach((nick) => {
-      nextScores[nick] = (nextScores[nick] || 0) + scoreDelta[nick];
+    // Calculate final scores for Redis
+    const finalScores = { ...scores };
+    steps.forEach(step => {
+      step.forEach(p => {
+        finalScores[p.nickname] = (finalScores[p.nickname] || 0) + p.points;
+      });
     });
 
-    setRoundPointsGained(pointsList);
+    setAnimationSteps(steps);
     setRevealedThisRound(true);
     
     // Broadcast state update to Redis
     sendAction('SET_STATE', {
-      scores: nextScores,
+      scores: finalScores,
     });
 
-    // Trigger animation after mount
+    // Start animation sequence shortly after mount
     setTimeout(() => {
-      setDisplayScores(nextScores);
-    }, 150);
+      setAnimationStepIdx(0);
+    }, 500);
 
     // Trigger confetti
     confetti({
@@ -249,6 +289,8 @@ export default function HostPage() {
   const nextRevealRound = () => {
     if (currentRoundIdx + 1 < submissions.length) {
       setRoundPointsGained([]);
+      setAnimationSteps([]);
+      setAnimationStepIdx(-1);
       setRevealedThisRound(false);
       sendAction('SET_STATE', {
         currentRoundIdx: currentRoundIdx + 1,
@@ -539,7 +581,7 @@ export default function HostPage() {
                                </div>
 
                                {totalGained > 0 && (
-                                 <div className="absolute -top-14 right-0 transform translate-x-1/2 animate-fade-up-slow flex flex-col items-center">
+                                 <div key={animationStepIdx} className="absolute -top-14 right-0 transform translate-x-1/2 animate-fade-up-slow flex flex-col items-center">
                                     <span className="text-[hsl(var(--success))] font-black text-2xl drop-shadow-md">+{totalGained}</span>
                                     <span className="text-[10px] text-white/80 font-bold bg-black/50 px-2 py-0.5 rounded-full whitespace-nowrap mt-1">{reasons}</span>
                                  </div>
