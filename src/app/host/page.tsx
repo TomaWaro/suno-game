@@ -316,9 +316,20 @@ export default function HostPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const sortedLeaderboard = Object.keys(scores)
+  const rawSortedLeaderboard = Object.keys(scores)
     .map((nickname) => ({ nickname, score: scores[nickname] }))
     .sort((a, b) => b.score - a.score);
+
+  let lastRank = 1;
+  const sortedLeaderboard = rawSortedLeaderboard.map((item, idx) => {
+    let rank = idx + 1;
+    if (idx > 0 && item.score === rawSortedLeaderboard[idx - 1].score) {
+      rank = lastRank;
+    } else {
+      lastRank = rank;
+    }
+    return { ...item, rank };
+  });
 
   return (
     <main className="relative min-h-screen w-full flex flex-col items-center justify-center p-6 overflow-hidden bg-[hsl(var(--bg-dark))]">
@@ -617,17 +628,17 @@ export default function HostPage() {
             <div className="w-full max-w-2xl flex flex-col gap-3 mb-8">
               {sortedLeaderboard.map((item, idx) => {
                 let medal = '';
-                if (idx === 0) medal = '🥇 ';
-                else if (idx === 1) medal = '🥈 ';
-                else if (idx === 2) medal = '🥉 ';
+                if (item.rank === 1) medal = '🥇 ';
+                else if (item.rank === 2) medal = '🥈 ';
+                else if (item.rank === 3) medal = '🥉 ';
                 
                 return (
                   <div 
                     key={idx} 
-                    className={`glass-panel p-4 flex items-center justify-between border-l-4 ${idx === 0 ? 'border-l-[hsl(var(--primary))] scale-105 shadow-xl bg-[hsla(var(--primary),0.05)]' : 'border-l-[rgba(255,255,255,0.2)]'}`}
+                    className={`glass-panel p-4 flex items-center justify-between border-l-4 ${item.rank === 1 ? 'border-l-[hsl(var(--primary))] scale-105 shadow-xl bg-[hsla(var(--primary),0.05)]' : 'border-l-[rgba(255,255,255,0.2)]'}`}
                   >
                     <div className="flex items-center gap-3">
-                      <span className="text-lg font-bold text-[rgba(255,255,255,0.4)]">#{idx + 1}</span>
+                      <span className="text-lg font-bold text-[rgba(255,255,255,0.4)]">#{item.rank}</span>
                       <span className="font-bold text-lg text-white">{medal}{item.nickname}</span>
                     </div>
                     <span className="text-xl font-black text-[hsl(var(--secondary))]">{item.score} pts</span>
