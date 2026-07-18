@@ -18,7 +18,6 @@ function PlayLobbyContent() {
   
   // Game states polled from server
   const [phase, setPhase] = useState<GamePhase>('LOBBY');
-  const [theme, setTheme] = useState<string>('');
   const [playersList, setPlayersList] = useState<string[]>([]);
   const [songTitle, setSongTitle] = useState<string>('');
   const [readyPlayers, setReadyPlayers] = useState<string[]>([]);
@@ -168,7 +167,6 @@ function PlayLobbyContent() {
 
           // Sync loop values
           setPhase(state.phase);
-          setTheme(state.theme);
           setPlayersList(state.players || []);
           setReadyPlayers(state.readyPlayers || []);
           setServerVotes(state.votes || []);

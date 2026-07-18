@@ -25,7 +25,6 @@ export async function POST(request: Request) {
     switch (action) {
       case 'START_SUBMISSION':
         state.phase = 'SUBMISSION';
-        state.theme = payload?.theme || state.theme;
         state.submissions = [];
         state.readyPlayers = [];
         state.votes = [];

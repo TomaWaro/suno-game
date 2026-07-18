@@ -5,7 +5,6 @@ import { GamePhase, Submission, Vote, ScoreState } from '@/lib/types';
 export interface RoomState {
   roomCode: string;
   phase: GamePhase;
-  theme: string;
   players: string[];
   readyPlayers: string[];
   submissions: Submission[];

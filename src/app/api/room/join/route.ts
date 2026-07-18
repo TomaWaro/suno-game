@@ -24,7 +24,6 @@ export async function POST(request: Request) {
         state = {
           roomCode: roomCode.toUpperCase(),
           phase: 'LOBBY',
-          theme: 'Un morceau épique sur un codeur fatigué',
           players: [],
           readyPlayers: [],
           submissions: [],

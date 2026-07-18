@@ -36,7 +36,6 @@ export default function HostPage() {
   const [currentRoundVotesCount, setCurrentRoundVotesCount] = useState<number>(0);
   
   // Local inputs
-  const [theme, setTheme] = useState<string>('Un morceau épique sur un codeur fatigué');
   const [roundPointsGained, setRoundPointsGained] = useState<PlayerPoints[]>([]);
   const [animationSteps, setAnimationSteps] = useState<PlayerPoints[][]>([]);
   const [animationStepIdx, setAnimationStepIdx] = useState<number>(-1);
@@ -63,7 +62,6 @@ export default function HostPage() {
 
   const syncState = (data: any) => {
     setPhase(data.phase);
-    setTheme(data.theme);
     setPlayers(data.players || []);
     setReadyPlayers(data.readyPlayers || []);
     setSubmissions(data.submissions || []);
@@ -204,8 +202,8 @@ export default function HostPage() {
     }
   };
 
-  const startSubmissionPhase = () => {
-    sendAction('START_SUBMISSION', { theme });
+  const startSubmissionPhase = async () => {
+    sendAction('START_SUBMISSION');
   };
 
   const startGuessingPhase = (roundIdx: number) => {
