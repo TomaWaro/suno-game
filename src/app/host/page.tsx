@@ -553,7 +553,7 @@ export default function HostPage() {
 
                 {/* Right Side: Race Track */}
                 <div className="w-full md:w-1/2 flex flex-col rounded-3xl p-6" style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', width: '100%', display: 'flex', flexDirection: 'column' }}>
-                  <h3 className="font-bold text-2xl text-white mb-8 border-b pb-3" style={{ borderBottomColor: 'rgba(255,255,255,0.1)' }}>Course aux points</h3>
+                  <h3 className="font-bold text-2xl text-white mb-8 border-b pb-3" style={{ borderBottomColor: 'rgba(255,255,255,0.1)' }}>🎧 Le Hit-Parade</h3>
                   <div className="flex flex-col gap-10 w-full mt-4" style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem', width: '100%' }}>
                     {players.map((nickname, idx) => {
                       const score = displayScores[nickname] || 0;
