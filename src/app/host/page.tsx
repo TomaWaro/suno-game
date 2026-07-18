@@ -389,18 +389,10 @@ export default function HostPage() {
         
         {/* LOBBY PHASE */}
         {phase === 'LOBBY' && (
-          <div className="fixed inset-0 w-full h-full flex flex-col pt-32 px-8 overflow-y-auto bg-[hsl(var(--bg-dark))] z-50">
-            
-            {/* Ambiance Spotlights (Purple) */}
-            <div className="absolute top-[-10%] left-[20%] w-[500px] h-[500px] bg-[#8b5cf6] rounded-full blur-[150px] opacity-40 pointer-events-none" />
-            <div className="absolute bottom-[-10%] right-[20%] w-[500px] h-[500px] bg-[#8b5cf6] rounded-full blur-[150px] opacity-40 pointer-events-none" />
-
-            {/* Decorative Background Elements */}
-            <div className="absolute top-1/4 left-10 text-6xl opacity-20 -rotate-12 animate-pulse pointer-events-none">🎵</div>
-            <div className="absolute top-1/3 right-20 text-7xl opacity-20 rotate-45 animate-pulse pointer-events-none" style={{ animationDelay: '1s' }}>🎸</div>
-            <div className="absolute bottom-1/4 left-1/4 text-8xl opacity-10 rotate-12 animate-pulse pointer-events-none" style={{ animationDelay: '2s' }}>🥁</div>
-            <div className="absolute bottom-1/3 right-1/4 text-6xl opacity-10 -rotate-45 animate-pulse pointer-events-none" style={{ animationDelay: '1.5s' }}>🎹</div>
-
+          <div 
+            className="fixed inset-0 w-full h-full bg-cover bg-center bg-no-repeat z-50 overflow-hidden" 
+            style={{ backgroundImage: 'url(/concert-bg.png)', backgroundColor: '#0f0a1f' }}
+          >
             {/* Top White Banner (Kahoot Style) */}
             <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[95%] max-w-6xl bg-white rounded-xl shadow-2xl flex flex-row items-center justify-between p-6 z-20">
               <div className="flex flex-col pl-6">
@@ -452,28 +444,30 @@ export default function HostPage() {
               </button>
             </div>
 
-            {/* Players Area */}
-            <div className="flex-1 mt-40 flex flex-col max-w-5xl mx-auto w-full z-10 relative">
-              <div className="w-full flex justify-start mb-4">
-                <div className="bg-white/10 backdrop-blur-sm px-6 py-2 rounded-full border border-white/20 shadow-lg inline-flex items-center gap-2">
+            {/* EXACT CENTER: Players Grid Area */}
+            <div className="absolute top-[55%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-5xl z-10 flex flex-col">
+              
+              {/* Player Count Badge - Top Left relative to the grid */}
+              <div className="flex justify-start mb-4">
+                <div className="bg-white/10 backdrop-blur-md px-6 py-2 rounded-full border border-white/20 shadow-xl inline-flex items-center gap-2">
                   <span className="text-white font-black text-2xl">{players.length}</span>
-                  <span className="text-white/80 font-bold text-lg uppercase tracking-wider">Joueur{players.length > 1 ? 's' : ''}</span>
+                  <span className="text-white/90 font-bold text-lg uppercase tracking-wider">Joueur{players.length > 1 ? 's' : ''}</span>
                 </div>
               </div>
               
-              <div className="w-full flex flex-wrap content-start gap-4 justify-center p-8 min-h-[400px] bg-black/20 rounded-3xl border border-white/5 shadow-2xl relative">
-                {/* Stage reflection effect inside the container */}
-                <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-[#8b5cf6]/10 to-transparent pointer-events-none rounded-b-3xl" />
+              {/* Grid block */}
+              <div className="w-full flex flex-wrap content-start gap-4 justify-center p-8 min-h-[400px] bg-black/40 backdrop-blur-sm rounded-3xl border border-white/10 shadow-2xl relative">
+                <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-[#8b5cf6]/20 to-transparent pointer-events-none rounded-b-3xl" />
                 
                 {players.length === 0 ? (
-                  <div className="w-full flex items-center justify-center mt-20">
-                    <span className="text-white/60 text-3xl font-bold animate-pulse">En attente de joueurs...</span>
+                  <div className="w-full flex items-center justify-center mt-20 z-10">
+                    <span className="text-white/80 text-3xl font-bold animate-pulse">En attente de joueurs...</span>
                   </div>
                 ) : (
                   players.map((nickname, idx) => (
                     <div 
                       key={idx} 
-                      className="w-48 h-16 bg-[#8b5cf6] text-white font-extrabold text-xl px-4 py-2 rounded shadow-[0_4px_15px_rgba(139,92,246,0.4)] flex items-center justify-center overflow-hidden relative z-10"
+                      className="w-48 h-16 bg-[#8b5cf6] text-white font-extrabold text-xl px-4 py-2 rounded-lg shadow-[0_4px_15px_rgba(139,92,246,0.6)] flex items-center justify-center overflow-hidden transition-all duration-300 z-10"
                     >
                       <span className="truncate drop-shadow-md">{nickname}</span>
                     </div>
