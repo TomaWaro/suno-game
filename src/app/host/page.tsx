@@ -211,7 +211,7 @@ export default function HostPage() {
         guesserPoints.push({
           nickname: v.voter,
           points: 500,
-          reason: 'Bonne réponse ! (+500)',
+          reason: '🎯 Bonne réponse !',
         });
       }
     });
@@ -231,13 +231,13 @@ export default function HostPage() {
       sweetSpotPoints.push({
         nickname: creator,
         points: creatorBasePoints,
-        reason: `Sweet Spot: Trouvé par ${G} joueur(s) (+${creatorBasePoints})`,
+        reason: `😎 Sweet Spot (${G} joueur${G > 1 ? 's' : ''})`,
       });
     } else {
       sweetSpotPoints.push({
         nickname: creator,
         points: 0,
-        reason: 'Sweet Spot: Personne ne vous a trouvé (+0)',
+        reason: 'Sweet Spot: Introuvable',
       });
     }
     steps.push(sweetSpotPoints);
@@ -252,7 +252,7 @@ export default function HostPage() {
       ratingPointsList.push({
         nickname: creator,
         points: ratingPoints,
-        reason: `Note moyenne: ${averageRating.toFixed(1)}/5★ (+${ratingPoints})`,
+        reason: `⭐ Note: ${averageRating.toFixed(1)}/5`,
       });
     }
     if (ratingPointsList.length > 0) steps.push(ratingPointsList);
@@ -585,14 +585,14 @@ export default function HostPage() {
                                 justifyContent: 'flex-end'
                               }}
                             >
-                               <div className="w-10 h-10 bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,0.5)] transform translate-x-5 flex items-center justify-center text-xl z-10 animate-bounce" style={{ position: 'absolute', right: '-20px' }}>
+                               <div className="w-10 h-10 bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,0.5)] transform translate-x-5 flex items-center justify-center text-xl z-10 animate-bounce" style={{ position: 'absolute', right: '-20px', transform: 'scaleX(-1)' }}>
                                   🏎️
                                </div>
 
                                {totalGained > 0 && (
-                                 <div key={animationStepIdx} className="absolute -top-14 right-0 transform translate-x-1/2 animate-fade-up-slow flex flex-col items-center" style={{ position: 'absolute', top: '-50px', right: '-20px' }}>
-                                    <span className="text-[hsl(var(--success))] font-black text-2xl drop-shadow-md" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>+{totalGained}</span>
-                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap mt-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)', color: 'rgba(255,255,255,0.8)' }}>{reasons}</span>
+                                 <div key={animationStepIdx} className="absolute -top-14 right-0 transform translate-x-1/2 animate-fade-up-slow flex flex-col items-center" style={{ position: 'absolute', top: '-60px', right: '-20px', zIndex: 50 }}>
+                                    <span className="font-black text-3xl" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255, 215, 0, 0.8), 0 2px 4px rgba(0,0,0,0.8)' }}>+{totalGained}</span>
+                                    <span className="font-bold px-3 py-1 rounded-full whitespace-nowrap mt-1 shadow-lg" style={{ backgroundColor: 'hsl(var(--primary))', color: 'white', fontSize: '12px', border: '1px solid rgba(255,255,255,0.3)' }}>{reasons}</span>
                                  </div>
                                )}
                             </div>
