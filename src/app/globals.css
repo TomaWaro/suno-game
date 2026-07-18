@@ -163,3 +163,46 @@ h1, h2, h3, h4, h5, h6 {
 .animate-fade-up-slow {
   animation: fadeUpSlow 4s ease-out forwards;
 }
+
+/* Kahoot style entrance animation for lobby players */
+@keyframes bounceIn {
+  0% { opacity: 0; transform: scale(0.3); }
+  50% { opacity: 0.9; transform: scale(1.1); }
+  80% { transform: scale(0.89); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.animate-bounce-in {
+  animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+/* Suspense Roulette Text Spinner */
+@keyframes slotMachine {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-33.33%); }
+}
+
+.animate-slot-machine {
+  animation: slotMachine 0.15s linear infinite;
+}
+
+/* Smooth growth of podium columns */
+@keyframes riseUp {
+  0% { height: 0; opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.animate-rise-up {
+  animation: riseUp 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* Glowing gold pulse for the first place */
+@keyframes pulseGold {
+  0%, 100% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); }
+  50% { box-shadow: 0 0 35px rgba(255, 215, 0, 0.9), 0 0 15px rgba(255, 255, 255, 0.6); }
+}
+
+.animate-pulse-gold {
+  animation: pulseGold 2s infinite ease-in-out;
+}
+

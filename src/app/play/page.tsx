@@ -4,6 +4,8 @@ import React, { Suspense, useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { GamePhase } from '@/lib/types';
 
+const COLORS = ['#ef4444', '#3b82f6', '#eab308', '#10b981', '#a855f7', '#f97316', '#06b6d4', '#ec4899'];
+
 function PlayLobbyContent() {
   const searchParams = useSearchParams();
   
@@ -265,22 +267,22 @@ function PlayLobbyContent() {
 
   if (joined) {
     return (
-      <div className="w-full max-w-md flex flex-col items-center justify-center gap-6">
+      <div className="w-full max-w-md flex flex-col items-center justify-center gap-6 p-2 min-h-screen">
         
         {/* LOBBY PHASE */}
         {phase === 'LOBBY' && (
-          <div className="w-full glass-panel p-8 flex flex-col items-center text-center z-10 animate-fade-in">
-            <span className="w-12 h-12 rounded-full bg-[hsla(var(--success),0.2)] flex items-center justify-center text-[hsl(var(--success))] mb-4 animate-bounce font-bold">
+          <div className="w-full glass-panel p-8 flex flex-col items-center text-center z-10 animate-fade-in gap-4">
+            <span className="w-16 h-16 rounded-full bg-[hsla(var(--success),0.2)] flex items-center justify-center text-[hsl(var(--success))] text-2xl mb-2 animate-bounce font-bold">
               ✓
             </span>
-            <h2 className="text-2xl font-bold text-white mb-2 font-headings">Lobby Rejoint</h2>
-            <p className="text-sm text-[rgba(255,255,255,0.6)] mb-6">
+            <h2 className="text-3xl font-black text-white font-headings tracking-tight">Lobby Rejoint !</h2>
+            <p className="text-sm text-[rgba(255,255,255,0.6)] leading-relaxed">
               Salon : <span className="font-bold text-[hsl(var(--secondary))]">{roomCode}</span><br />
-              Pseudo : <span className="font-bold text-[hsl(var(--primary))]">{nickname}</span>
+              Joueur : <span className="font-bold text-[hsl(var(--primary))]">{nickname}</span>
             </p>
-            <div className="flex flex-col items-center justify-center p-4 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-2xl w-full">
-              <div className="w-6 h-6 border-2 border-[hsl(var(--primary))] border-t-transparent rounded-full animate-spin mb-3" />
-              <span className="text-xs text-[rgba(255,255,255,0.5)]">
+            <div className="flex flex-col items-center justify-center p-6 bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)] rounded-2xl w-full mt-4">
+              <div className="w-8 h-8 border-4 border-[hsl(var(--primary))] border-t-transparent rounded-full animate-spin mb-4" />
+              <span className="text-xs text-white/50 uppercase tracking-widest font-black">
                 En attente du lancement par l'hôte...
               </span>
             </div>
@@ -290,36 +292,36 @@ function PlayLobbyContent() {
         {/* SUBMISSION FORM */}
         {phase === 'SUBMISSION' && (
           <div className="w-full glass-panel p-8 flex flex-col z-10 animate-fade-in">
-            <h2 className="text-2xl font-bold text-center text-white mb-4">Créez votre chanson !</h2>
+            <h2 className="text-3xl font-black text-center text-white mb-6 font-headings">Création du morceau</h2>
             
-            <div className="bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-xl p-4 text-center mb-6">
+            <div className="bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-2xl p-5 text-center mb-6">
               <span className="text-[10px] text-[rgba(255,255,255,0.4)] uppercase tracking-wider block mb-1">Thème imposé</span>
-              <p className="text-md font-bold text-[hsl(var(--primary))]">"{theme}"</p>
+              <p className="text-lg font-black text-[hsl(var(--primary))]">"{theme}"</p>
             </div>
 
             {submittedSong ? (
-              <div className="text-center p-6 bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.05)] rounded-2xl">
-                <span className="text-4xl mb-3 block">🎉</span>
-                <h3 className="font-bold text-white mb-1">Morceau envoyé !</h3>
-                <p className="text-xs text-[rgba(255,255,255,0.5)]">Attente des autres joueurs...</p>
+              <div className="text-center p-8 bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.05)] rounded-2xl">
+                <span className="text-5xl mb-4 block">🎉</span>
+                <h3 className="font-black text-white text-lg mb-1">Morceau envoyé !</h3>
+                <p className="text-xs text-[rgba(255,255,255,0.5)]">Préparez-vous pour l'écoute...</p>
               </div>
-             ) : (
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs text-[rgba(255,255,255,0.6)] uppercase tracking-wider">Lien direct Suno AI</label>
+            ) : (
+              <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs text-[rgba(255,255,255,0.6)] uppercase tracking-wider font-bold">Lien direct Suno AI</label>
                   <input
                     type="url"
                     value={songUrl}
                     onChange={(e) => setSongUrl(e.target.value)}
                     placeholder="https://suno.com/song/..."
-                    className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none focus:border-[hsl(var(--secondary))]"
+                    className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-xl px-4 py-3.5 text-white text-sm focus:outline-none focus:border-[hsl(var(--secondary))]"
                   />
                 </div>
 
                 <button 
                   disabled={!songUrl}
                   onClick={submitSong}
-                  className="btn-neon w-full py-3 mt-2"
+                  className="btn-neon w-full py-4 text-base font-black uppercase tracking-wider"
                 >
                   Envoyer mon morceau
                 </button>
@@ -330,77 +332,84 @@ function PlayLobbyContent() {
 
         {/* GUESSING PHASE */}
         {phase === 'GUESSING' && (
-          <div className="w-full glass-panel p-8 flex flex-col z-10 animate-fade-in">
-            <h2 className="text-xl font-bold text-center text-white mb-2">Vote & Estimation</h2>
-            <p className="text-xs text-[rgba(255,255,255,0.5)] text-center mb-6">
-              Écoute en cours du morceau mystère 🎶
-            </p>
+          <div className="w-full glass-panel p-6 flex flex-col z-10 animate-fade-in min-h-[80vh] justify-between">
+            <div className="text-center mb-4">
+              <h2 className="text-2xl font-black text-white font-headings">Vote & Estimation</h2>
+              <p className="text-xs text-[rgba(255,255,255,0.5)] mt-1">
+                Écoute en cours du morceau mystère 🎶
+              </p>
+            </div>
 
             {submittedVote ? (
-              <div className="text-center p-6 bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.05)] rounded-2xl">
-                <span className="text-4xl mb-3 block">🗳️</span>
-                <h3 className="font-bold text-white mb-1">Vote enregistré !</h3>
-                <p className="text-xs text-[rgba(255,255,255,0.5)]">Regardez l'écran central pour la révélation.</p>
+              <div className="text-center p-8 bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.05)] rounded-2xl my-auto">
+                <span className="text-5xl mb-4 block">🗳️</span>
+                <h3 className="font-black text-white text-lg mb-1">Vote enregistré !</h3>
+                <p className="text-xs text-[rgba(255,255,255,0.5)]">Regardez l'écran principal pour la révélation.</p>
               </div>
             ) : (
-              <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-6 flex-1 justify-between">
                 
                 {/* Self-voting protection */}
                 {songCreatorExclusion === nickname ? (
-                  <div className="p-4 bg-[rgba(255,255,255,0.05)] rounded-xl text-center border border-[rgba(255,255,255,0.1)]">
-                    <p className="text-sm font-semibold text-[hsl(var(--primary))]">C'est votre morceau !</p>
-                    <p className="text-xs text-[rgba(255,255,255,0.4)] mt-1">Vous ne pouvez pas voter sur votre propre chanson.</p>
+                  <div className="p-6 bg-[rgba(255,255,255,0.05)] rounded-2xl text-center border border-[rgba(255,255,255,0.1)] my-auto">
+                    <p className="text-lg font-black text-[hsl(var(--primary))] font-headings">C'est votre morceau !</p>
+                    <p className="text-sm text-[rgba(255,255,255,0.4)] mt-2">Vous ne pouvez pas voter sur votre propre création, restez discret... 😎</p>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs text-[rgba(255,255,255,0.6)] uppercase tracking-wider mb-1">
+                  <div className="flex flex-col gap-2 flex-1">
+                    <label className="text-xs text-[rgba(255,255,255,0.6)] uppercase tracking-wider font-bold mb-1 text-center">
                       Qui a créé ce morceau ?
                     </label>
-                    <div className="grid grid-cols-2 gap-2 max-h-[200px] overflow-y-auto pr-1">
+                    <div className="grid grid-cols-2 gap-3 w-full mt-2 flex-1">
                       {playersList
                         .filter((p) => p !== nickname) // Exclude voter's own nickname
-                        .map((name, idx) => (
-                          <div
-                            key={idx}
-                            onClick={() => setCreatorGuess(name)}
-                            className="p-3 rounded-xl border text-sm font-semibold transition-all cursor-pointer text-center"
-                            style={{
-                              borderColor: creatorGuess === name ? 'hsl(330, 100%, 50%)' : 'rgba(255,255,255,0.1)',
-                              backgroundColor: creatorGuess === name ? 'rgba(236, 72, 153, 0.25)' : 'rgba(255,255,255,0.03)',
-                              color: creatorGuess === name ? '#ffffff' : 'rgba(255,255,255,0.6)',
-                              boxShadow: creatorGuess === name ? '0 0 15px rgba(236, 72, 153, 0.4)' : 'none'
-                            }}
-                          >
-                            {name}
-                          </div>
-                        ))}
+                        .map((name, idx) => {
+                          const buttonColor = COLORS[idx % COLORS.length];
+                          const isSelected = creatorGuess === name;
+                          return (
+                            <button
+                              key={idx}
+                              onClick={() => setCreatorGuess(name)}
+                              className="p-4 rounded-2xl text-white text-lg font-black tracking-wide transition-all active:scale-95 flex flex-col items-center justify-center min-h-[90px] shadow-lg"
+                              style={{
+                                backgroundColor: buttonColor,
+                                border: isSelected ? '4px solid #ffffff' : '4px solid transparent',
+                                boxShadow: isSelected ? `0 0 20px ${buttonColor}` : 'none',
+                                opacity: isSelected ? 1 : 0.85,
+                              }}
+                            >
+                              <span className="text-2xl mb-1">{['🎵', '🎸', '🎹', '🥁', '🎷', '🎤', '🎻', '🎺'][idx % 8]}</span>
+                              <span className="truncate max-w-full font-headings text-sm">{name}</span>
+                            </button>
+                          );
+                        })}
                     </div>
                   </div>
                 )}
 
                 {/* Rating selection (everyone rates!) */}
-                <div className="bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)] rounded-2xl p-4 flex flex-col items-center">
-                  <label className="text-xs text-[rgba(255,255,255,0.5)] uppercase tracking-wider mb-1">
-                    Note du morceau
+                <div className="bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)] rounded-2xl p-4 flex flex-col items-center mt-4">
+                  <label className="text-xs text-[rgba(255,255,255,0.5)] uppercase tracking-wider font-bold mb-2">
+                    Donnez une note de qualité !
                   </label>
-                  <div className="flex justify-center items-center gap-1">
+                  <div className="flex justify-center items-center gap-2">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <div
                         key={star}
                         onClick={() => setSongRating(star)}
-                        className="p-2 transition-all transform active:scale-125 cursor-pointer"
+                        className="p-1.5 transition-all transform active:scale-125 cursor-pointer"
                         style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           viewBox="0 0 24 24"
-                          width="48"
-                          height="48"
-                          fill={songRating >= star ? '#fbbf24' : 'rgba(255,255,255,0.2)'}
+                          width="42"
+                          height="42"
+                          fill={songRating >= star ? '#fbbf24' : 'rgba(255,255,255,0.15)'}
                           style={{
-                            width: '48px',
-                            height: '48px',
-                            filter: songRating >= star ? 'drop-shadow(0 0 8px rgba(251,191,36,0.6))' : 'none'
+                            width: '42px',
+                            height: '42px',
+                            filter: songRating >= star ? 'drop-shadow(0 0 8px rgba(251,191,36,0.7))' : 'none'
                           }}
                         >
                           <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
@@ -413,9 +422,9 @@ function PlayLobbyContent() {
                 <button
                   disabled={(!creatorGuess && songCreatorExclusion !== nickname) || songRating === 0}
                   onClick={submitVote}
-                  className="btn-neon w-full py-3"
+                  className="btn-neon w-full py-4 text-lg font-black uppercase tracking-wider mt-4"
                 >
-                  Envoyer le vote
+                  Envoyer mon vote 🗳️
                 </button>
               </div>
             )}
@@ -424,21 +433,21 @@ function PlayLobbyContent() {
 
         {/* REVEAL & LEADERBOARD PLACES */}
         {phase === 'REVEAL' && (
-          <div className="w-full glass-panel p-8 text-center z-10 animate-fade-in">
-            <span className="text-4xl mb-4 block">👀</span>
-            <h2 className="text-2xl font-bold text-white mb-2">Révélation en cours...</h2>
-            <p className="text-xs text-[rgba(255,255,255,0.5)]">
-              Regardez l'écran central pour voir le créateur du morceau et les scores attribués !
+          <div className="w-full glass-panel p-8 text-center z-10 animate-fade-in gap-4 flex flex-col items-center">
+            <span className="text-5xl mb-2 block animate-pulse">👀</span>
+            <h2 className="text-2xl font-black text-white font-headings">Révélation en cours...</h2>
+            <p className="text-sm text-[rgba(255,255,255,0.5)] leading-relaxed">
+              Regardez l'écran central pour voir le créateur et le classement du Hit-Parade !
             </p>
           </div>
         )}
 
         {phase === 'LEADERBOARD' && (
-          <div className="w-full glass-panel p-8 text-center z-10 animate-fade-in">
-            <span className="text-4xl mb-4 block">🏆</span>
-            <h2 className="text-2xl font-bold text-white mb-2">Partie terminée !</h2>
-            <p className="text-xs text-[rgba(255,255,255,0.5)]">
-              Découvrez le gagnant sur le podium final de l'écran principal !
+          <div className="w-full glass-panel p-8 text-center z-10 animate-fade-in gap-4 flex flex-col items-center">
+            <span className="text-5xl mb-2 block animate-bounce">🏆</span>
+            <h2 className="text-2xl font-black text-white font-headings">Partie terminée !</h2>
+            <p className="text-sm text-[rgba(255,255,255,0.5)] leading-relaxed">
+              Découvrez les grands vainqueurs sur le podium de l'écran principal !
             </p>
           </div>
         )}
@@ -449,19 +458,20 @@ function PlayLobbyContent() {
 
   // Join Form (Lobby connection)
   return (
-    <form onSubmit={handleJoin} className="w-full max-w-md glass-panel p-8 flex flex-col z-10">
-      <h2 className="text-3xl font-black text-center text-white mb-6">Rejoindre la partie</h2>
+    <form onSubmit={handleJoin} className="w-full max-w-md glass-panel p-8 flex flex-col z-10 gap-6 animate-fade-in">
+      <h2 className="text-4xl font-black text-center text-white mb-2 font-headings tracking-tight">SunoGame</h2>
+      <p className="text-center text-sm text-white/50">Rejoins la partie sur ton téléphone !</p>
       
       {error && (
-        <div className="mb-4 p-3 rounded-xl bg-[rgba(239,68,68,0.15)] border border-[rgba(239,68,68,0.3)] text-red-400 text-xs text-center">
+        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/35 text-red-400 text-sm text-center">
           {error}
         </div>
       )}
 
-      <div className="flex flex-col gap-4 mb-6">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs text-[rgba(255,255,255,0.6)] uppercase tracking-wider">
-            Code de salon (Room PIN)
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <label className="text-xs text-white/60 uppercase tracking-wider font-bold">
+            Code PIN du salon
           </label>
           <input
             type="text"
@@ -470,23 +480,23 @@ function PlayLobbyContent() {
             placeholder="Ex: 1234"
             maxLength={6}
             disabled={loading}
-            className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-xl px-4 py-3 text-white text-lg font-bold tracking-widest text-center focus:outline-none focus:border-[hsl(var(--secondary))] transition-colors"
+            className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-white text-3xl font-black tracking-widest text-center focus:outline-none focus:border-[hsl(var(--secondary))] transition-all font-headings"
             required
           />
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs text-[rgba(255,255,255,0.6)] uppercase tracking-wider">
-            Votre pseudo
+        <div className="flex flex-col gap-2">
+          <label className="text-xs text-white/60 uppercase tracking-wider font-bold">
+            Ton Pseudo
           </label>
           <input
             type="text"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
-            placeholder="Ex: Johnny"
+            placeholder="Pseudo..."
             maxLength={15}
             disabled={loading}
-            className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-xl px-4 py-3 text-white text-lg font-semibold text-center focus:outline-none focus:border-[hsl(var(--primary))] transition-colors"
+            className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-white text-2xl font-black text-center focus:outline-none focus:border-[hsl(var(--primary))] transition-all font-headings"
             required
           />
         </div>
@@ -495,7 +505,7 @@ function PlayLobbyContent() {
       <button
         type="submit"
         disabled={loading || !roomCode || !nickname}
-        className="btn-neon w-full py-3"
+        className="btn-neon w-full py-4 text-lg font-black uppercase tracking-wider mt-4"
       >
         {loading ? 'Connexion...' : 'Prêt à Jouer !'}
       </button>
