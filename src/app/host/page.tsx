@@ -231,13 +231,13 @@ export default function HostPage() {
       sweetSpotPoints.push({
         nickname: creator,
         points: creatorBasePoints,
-        reason: `😎 Sweet Spot (${G} joueur${G > 1 ? 's' : ''})`,
+        reason: `🕵️ Démasqué (${G} joueur${G > 1 ? 's' : ''})`,
       });
     } else {
       sweetSpotPoints.push({
         nickname: creator,
         points: 0,
-        reason: 'Sweet Spot: Introuvable',
+        reason: 'Fantôme : Personne ne vous a trouvé !',
       });
     }
     steps.push(sweetSpotPoints);
