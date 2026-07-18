@@ -389,7 +389,14 @@ export default function HostPage() {
         
         {/* LOBBY PHASE */}
         {phase === 'LOBBY' && (
-          <div className="w-full min-h-screen flex flex-col pt-32 px-8">
+          <div className="w-full min-h-screen flex flex-col pt-32 px-8 relative overflow-hidden">
+            
+            {/* Decorative Background Elements */}
+            <div className="absolute top-1/4 left-10 text-6xl opacity-20 -rotate-12 animate-pulse">🎵</div>
+            <div className="absolute top-1/3 right-20 text-7xl opacity-20 rotate-45 animate-pulse" style={{ animationDelay: '1s' }}>🎸</div>
+            <div className="absolute bottom-1/4 left-1/4 text-8xl opacity-10 rotate-12 animate-pulse" style={{ animationDelay: '2s' }}>🥁</div>
+            <div className="absolute bottom-1/3 right-1/4 text-6xl opacity-10 -rotate-45 animate-pulse" style={{ animationDelay: '1.5s' }}>🎹</div>
+
             {/* Top White Banner (Kahoot Style) */}
             <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[95%] max-w-6xl bg-white rounded-xl shadow-2xl flex flex-row items-center justify-between p-6 z-20">
               <div className="flex flex-col pl-6">
@@ -404,6 +411,17 @@ export default function HostPage() {
               
               {joinUrl && (
                 <div className="pr-6 flex items-center gap-6">
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(joinUrl);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="flex flex-col items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-3 rounded-xl transition-all shadow-sm active:scale-95"
+                  >
+                    <span className="text-2xl">🔗</span>
+                    <span className="text-xs uppercase tracking-wider">{copied ? 'Copié !' : 'Copier lien'}</span>
+                  </button>
                   <div className="bg-slate-100 p-2 rounded-xl">
                     <img
                       src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(joinUrl)}`}
@@ -416,7 +434,7 @@ export default function HostPage() {
             </div>
 
             {/* Start Button Container (Right Aligned) */}
-            <div className="absolute top-48 right-[2.5%] md:right-[5%] z-20 flex flex-col gap-3 w-80">
+            <div className="absolute top-52 right-[2.5%] md:right-[5%] z-20 flex flex-col gap-3 w-80">
               <button 
                 disabled={players.length === 0}
                 onClick={startSubmissionPhase}
@@ -431,24 +449,25 @@ export default function HostPage() {
             </div>
 
             {/* Players Grid Area */}
-            <div className="flex-1 mt-20 flex flex-col gap-4 max-w-6xl mx-auto w-full">
-              <div className="w-full flex justify-end px-4">
-                <div className="bg-white/10 backdrop-blur-sm px-6 py-2 rounded-full border border-white/20 shadow-lg">
-                  <span className="text-white font-bold text-xl">{players.length} Joueur{players.length > 1 ? 's' : ''}</span>
+            <div className="flex-1 mt-32 flex flex-col gap-4 max-w-6xl mx-auto w-full items-center z-10 relative">
+              <div className="w-full flex justify-start px-4">
+                <div className="bg-white/10 backdrop-blur-sm px-6 py-2 rounded-full border border-white/20 shadow-lg inline-flex items-center gap-2">
+                  <span className="text-white font-black text-2xl">{players.length}</span>
+                  <span className="text-white/80 font-bold text-lg uppercase tracking-wider">Joueur{players.length > 1 ? 's' : ''}</span>
                 </div>
               </div>
               
-              <div className="w-full flex flex-wrap content-start gap-4 justify-start p-4">
+              <div className="w-full flex flex-wrap content-start gap-4 justify-center p-4 min-h-[400px]">
               
               {players.length === 0 ? (
                 <div className="w-full flex items-center justify-center mt-20">
-                  <span className="text-white/60 text-2xl font-bold animate-pulse">En attente de joueurs...</span>
+                  <span className="text-white/60 text-3xl font-bold animate-pulse">En attente de joueurs...</span>
                 </div>
               ) : (
                 players.map((nickname, idx) => (
                   <div 
                     key={idx} 
-                    className="w-48 h-16 bg-[#8b5cf6] text-white font-extrabold text-xl px-4 py-2 rounded shadow-md flex items-center justify-center overflow-hidden animate-bounce-in"
+                    className="w-48 h-16 bg-[#8b5cf6] text-white font-extrabold text-xl px-4 py-2 rounded shadow-lg flex items-center justify-center overflow-hidden transition-all duration-300 scale-100"
                   >
                     <span className="truncate">{nickname}</span>
                   </div>
