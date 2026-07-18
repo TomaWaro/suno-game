@@ -152,3 +152,14 @@ h1, h2, h3, h4, h5, h6 {
 .animate-pulse-glow {
   animation: pulseGlow 2.5s infinite ease-in-out;
 }
+
+@keyframes fadeUpSlow {
+  0% { opacity: 0; transform: translateY(10px); }
+  10% { opacity: 1; transform: translateY(0); }
+  90% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-15px); }
+}
+
+.animate-fade-up-slow {
+  animation: fadeUpSlow 4s ease-out forwards;
+}

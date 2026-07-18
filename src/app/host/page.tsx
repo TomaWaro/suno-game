@@ -446,13 +446,15 @@ export default function HostPage() {
 
         {/* REVEAL PHASE */}
         {phase === 'REVEAL' && submissions[currentRoundIdx] && (
-          <div className="glass-panel p-8 flex flex-col items-center animate-fade-in">
-            <span className="text-xs uppercase tracking-widest text-[hsl(var(--secondary))] font-bold mb-2">
-              Révélation {currentRoundIdx + 1} / {submissions.length}
-            </span>
+          <div className="glass-panel p-8 flex flex-col animate-fade-in w-full">
+            <div className="text-center mb-6">
+              <span className="text-xs uppercase tracking-widest text-[hsl(var(--secondary))] font-bold">
+                Révélation {currentRoundIdx + 1} / {submissions.length}
+              </span>
+            </div>
 
             {!revealedThisRound ? (
-              <>
+              <div className="flex flex-col items-center w-full">
                 <h1 className="text-3xl font-black text-white text-center mb-2">Qui a créé cette chanson ?</h1>
                 <h2 className="text-xl font-semibold text-[hsl(var(--secondary))] mb-6">"{submissions[currentRoundIdx].title}"</h2>
 
@@ -472,37 +474,71 @@ export default function HostPage() {
                 >
                   Découvrir le créateur
                 </button>
-              </>
+              </div>
             ) : (
-              <>
-                <h1 className="text-4xl font-black text-white mb-2">C'était le morceau de...</h1>
-                <h2 className="text-6xl font-black text-[hsl(var(--primary))] animate-pulse mb-8">
-                  {submissions[currentRoundIdx].nickname}
-                </h2>
-
-                <div className="w-full max-w-2xl bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-2xl p-6 mb-8">
-                  <h3 className="font-bold text-lg text-white mb-4 border-b border-[rgba(255,255,255,0.1)] pb-2">Attribution des points</h3>
-                  {roundPointsGained.length === 0 ? (
-                    <p className="text-xs text-[rgba(255,255,255,0.4)] text-center py-4">Aucun point attribué cette manche.</p>
-                  ) : (
-                    <div className="flex flex-col gap-3">
-                      {roundPointsGained.map((g, idx) => (
-                        <div key={idx} className="flex justify-between items-center bg-[rgba(255,255,255,0.03)] p-3 rounded-xl">
-                          <span className="font-semibold text-white">{g.nickname}</span>
-                          <div className="text-right">
-                            <span className="text-[hsl(var(--success))] font-bold text-sm block">+{g.points} pts</span>
-                            <span className="text-[10px] text-[rgba(255,255,255,0.4)]">{g.reason}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+              <div className="flex flex-col md:flex-row w-full gap-8">
+                {/* Left Side: Song Reveal */}
+                <div className="w-full md:w-1/2 flex flex-col items-center justify-center">
+                  <h1 className="text-4xl font-black text-white mb-2 text-center">C'était le morceau de...</h1>
+                  <h2 className="text-6xl font-black text-[hsl(var(--primary))] animate-pulse mb-8 text-center">
+                    {submissions[currentRoundIdx].nickname}
+                  </h2>
+                  <div className="w-full aspect-[16/9] rounded-xl overflow-hidden bg-black border border-[rgba(255,255,255,0.05)] shadow-xl mb-8">
+                    <iframe
+                      src={getEmbedUrl(submissions[currentRoundIdx].sunoUrl)}
+                      className="w-full h-full border-none"
+                      allow="autoplay; encrypted-media"
+                      title={submissions[currentRoundIdx].title}
+                    />
+                  </div>
+                  <button onClick={nextRevealRound} className="btn-neon w-full py-4">
+                    {currentRoundIdx + 1 < submissions.length ? 'Révéler le morceau suivant' : 'Podium final'}
+                  </button>
                 </div>
 
-                <button onClick={nextRevealRound} className="btn-neon w-full max-w-md py-4">
-                  {currentRoundIdx + 1 < submissions.length ? 'Révéler le morceau suivant' : 'Podium final'}
-                </button>
-              </>
+                {/* Right Side: Race Track */}
+                <div className="w-full md:w-1/2 flex flex-col bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.05)] rounded-3xl p-6">
+                  <h3 className="font-bold text-2xl text-white mb-8 border-b border-[rgba(255,255,255,0.1)] pb-3">Course aux points</h3>
+                  <div className="flex flex-col gap-10 w-full mt-4">
+                    {players.map((nickname, idx) => {
+                      const score = scores[nickname] || 0;
+                      const maxScore = Math.max(2000, ...(Object.values(scores) as number[]));
+                      const percentage = Math.min(100, Math.max(0, (score / maxScore) * 100));
+                      
+                      const gainedThisRound = roundPointsGained.filter(g => g.nickname === nickname);
+                      const totalGained = gainedThisRound.reduce((sum, g) => sum + g.points, 0);
+                      const reasons = gainedThisRound.map(g => g.reason).join(' | ');
+
+                      return (
+                        <div key={idx} className="flex flex-col gap-2 relative w-full">
+                          <div className="flex justify-between items-end mb-1">
+                            <span className="font-bold text-white text-lg">{nickname}</span>
+                            <span className="text-[hsl(var(--secondary))] font-black text-xl">{score} pts</span>
+                          </div>
+                          
+                          <div className="w-full h-4 bg-[rgba(255,255,255,0.05)] rounded-full relative shadow-inner">
+                            <div 
+                              className="absolute top-0 left-0 h-full bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--secondary))] rounded-full transition-all duration-[2000ms] ease-out flex items-center justify-end"
+                              style={{ width: `${percentage}%` }}
+                            >
+                               <div className="w-10 h-10 bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,0.5)] transform translate-x-5 flex items-center justify-center text-xl z-10 animate-bounce">
+                                  🏎️
+                               </div>
+
+                               {totalGained > 0 && (
+                                 <div className="absolute -top-14 right-0 transform translate-x-1/2 animate-fade-up-slow flex flex-col items-center">
+                                    <span className="text-[hsl(var(--success))] font-black text-2xl drop-shadow-md">+{totalGained}</span>
+                                    <span className="text-[10px] text-[rgba(255,255,255,0.8)] font-bold bg-black bg-opacity-50 px-2 py-0.5 rounded-full whitespace-nowrap mt-1">{reasons}</span>
+                                 </div>
+                               )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         )}
