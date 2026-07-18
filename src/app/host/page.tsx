@@ -552,9 +552,9 @@ export default function HostPage() {
                 </div>
 
                 {/* Right Side: Race Track */}
-                <div className="w-full md:w-1/2 flex flex-col bg-white/5 border border-white/10 rounded-3xl p-6">
-                  <h3 className="font-bold text-2xl text-white mb-8 border-b border-white/10 pb-3">Course aux points</h3>
-                  <div className="flex flex-col gap-10 w-full mt-4">
+                <div className="w-full md:w-1/2 flex flex-col rounded-3xl p-6" style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', width: '100%', display: 'flex', flexDirection: 'column' }}>
+                  <h3 className="font-bold text-2xl text-white mb-8 border-b pb-3" style={{ borderBottomColor: 'rgba(255,255,255,0.1)' }}>Course aux points</h3>
+                  <div className="flex flex-col gap-10 w-full mt-4" style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem', width: '100%' }}>
                     {players.map((nickname, idx) => {
                       const score = displayScores[nickname] || 0;
                       const maxScore = Math.max(2000, ...(Object.values(displayScores) as number[]));
@@ -565,25 +565,34 @@ export default function HostPage() {
                       const reasons = gainedThisRound.map(g => g.reason).join(' | ');
 
                       return (
-                        <div key={idx} className="flex flex-col gap-2 relative w-full">
-                          <div className="flex justify-between items-end mb-1">
+                        <div key={idx} className="flex flex-col gap-2 relative w-full" style={{ display: 'flex', flexDirection: 'column', width: '100%', marginBottom: '2rem' }}>
+                          <div className="flex justify-between items-end mb-1" style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
                             <span className="font-bold text-white text-lg">{nickname}</span>
                             <span className="text-[hsl(var(--secondary))] font-black text-xl">{score} pts</span>
                           </div>
                           
-                          <div className="w-full h-4 bg-white/10 rounded-full relative shadow-inner">
+                          <div className="w-full h-4 rounded-full relative shadow-inner" style={{ width: '100%', height: '16px', backgroundColor: 'rgba(255,255,255,0.1)', position: 'relative' }}>
                             <div 
-                              className="absolute top-0 left-0 h-full bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--secondary))] rounded-full transition-all duration-1000 ease-out flex items-center justify-end"
-                              style={{ width: `${percentage}%` }}
+                              className="absolute top-0 left-0 h-full rounded-full flex items-center justify-end"
+                              style={{ 
+                                width: `${percentage}%`,
+                                background: 'linear-gradient(to right, hsl(var(--primary)), hsl(var(--secondary)))',
+                                transition: 'width 1000ms ease-out',
+                                height: '100%',
+                                position: 'absolute',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'flex-end'
+                              }}
                             >
-                               <div className="w-10 h-10 bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,0.5)] transform translate-x-5 flex items-center justify-center text-xl z-10 animate-bounce">
+                               <div className="w-10 h-10 bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,0.5)] transform translate-x-5 flex items-center justify-center text-xl z-10 animate-bounce" style={{ position: 'absolute', right: '-20px' }}>
                                   🏎️
                                </div>
 
                                {totalGained > 0 && (
-                                 <div key={animationStepIdx} className="absolute -top-14 right-0 transform translate-x-1/2 animate-fade-up-slow flex flex-col items-center">
-                                    <span className="text-[hsl(var(--success))] font-black text-2xl drop-shadow-md">+{totalGained}</span>
-                                    <span className="text-[10px] text-white/80 font-bold bg-black/50 px-2 py-0.5 rounded-full whitespace-nowrap mt-1">{reasons}</span>
+                                 <div key={animationStepIdx} className="absolute -top-14 right-0 transform translate-x-1/2 animate-fade-up-slow flex flex-col items-center" style={{ position: 'absolute', top: '-50px', right: '-20px' }}>
+                                    <span className="text-[hsl(var(--success))] font-black text-2xl drop-shadow-md" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>+{totalGained}</span>
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap mt-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)', color: 'rgba(255,255,255,0.8)' }}>{reasons}</span>
                                  </div>
                                )}
                             </div>
