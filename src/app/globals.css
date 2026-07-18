@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   /* HSL Styling Variables */
   --bg-dark: 256 48% 6%;
