@@ -332,47 +332,35 @@ function PlayLobbyContent() {
 
         {/* GUESSING PHASE */}
         {phase === 'GUESSING' && (
-          <div className="w-full glass-panel p-6 flex flex-col z-10 animate-fade-in min-h-[80vh] justify-between">
-            <div className="text-center mb-4">
-              <h2 className="text-2xl font-black text-white font-headings">Vote & Estimation</h2>
-              <p className="text-xs text-[rgba(255,255,255,0.5)] mt-1">
-                Écoute en cours du morceau mystère 🎶
-              </p>
-            </div>
-
+          <div className="w-full min-h-screen flex flex-col justify-between bg-slate-900 pt-8 pb-4 px-2">
+            
             {submittedVote ? (
-              <div className="text-center p-8 bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.05)] rounded-2xl my-auto">
-                <span className="text-5xl mb-4 block">🗳️</span>
-                <h3 className="font-black text-white text-lg mb-1">Vote enregistré !</h3>
-                <p className="text-xs text-[rgba(255,255,255,0.5)]">Regardez l'écran principal pour la révélation.</p>
+              <div className="flex-1 flex flex-col items-center justify-center">
+                <div className="w-full max-w-sm bg-white/10 backdrop-blur-md p-8 rounded-3xl text-center">
+                  <span className="text-6xl mb-4 block animate-bounce">⏳</span>
+                  <h3 className="font-black text-white text-3xl mb-2">Vote enregistré !</h3>
+                  <p className="text-white/60 font-bold">Regardez l'écran de l'hôte...</p>
+                </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-6 flex-1 justify-between">
-                
+              <div className="flex-1 flex flex-col h-full">
                 {/* Self-voting protection */}
                 {songCreatorExclusion === nickname ? (
-                  <div className="p-6 bg-[rgba(255,255,255,0.05)] rounded-2xl text-center border border-[rgba(255,255,255,0.1)] my-auto">
-                    <p className="text-lg font-black text-[hsl(var(--primary))] font-headings">C'est votre morceau !</p>
-                    <p className="text-sm text-[rgba(255,255,255,0.4)] mt-2">Vous ne pouvez pas voter sur votre propre création, restez discret... 😎</p>
+                  <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                    <span className="text-6xl mb-4 block">🤫</span>
+                    <p className="text-3xl font-black text-white mb-2">C'est votre morceau !</p>
+                    <p className="text-lg text-white/60 font-bold">Vous ne pouvez pas voter. Gardez le secret !</p>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-2 flex-1">
-                    <label className="text-xs text-[rgba(255,255,255,0.6)] uppercase tracking-wider font-bold mb-1 text-center">
-                      Qui a créé ce morceau ?
-                    </label>
-                    <div 
-                      style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: 'repeat(2, 1fr)', 
-                        gridAutoRows: '1fr', 
-                        gap: '12px', 
-                        width: '100%', 
-                        flexGrow: 1, 
-                        marginTop: '8px' 
-                      }}
-                    >
+                  <>
+                    <div className="text-center mb-4">
+                      <h2 className="text-xl font-black text-white uppercase tracking-widest">Qui est l'auteur ?</h2>
+                    </div>
+                    
+                    {/* Massive Voting Grid */}
+                    <div className="flex-1 grid grid-cols-2 gap-2 mb-4">
                       {playersList
-                        .filter((p) => p !== nickname) // Exclude voter's own nickname
+                        .filter((p) => p !== nickname)
                         .map((name, idx) => {
                           const buttonColor = COLORS[idx % COLORS.length];
                           const isSelected = creatorGuess === name;
@@ -380,53 +368,49 @@ function PlayLobbyContent() {
                             <button
                               key={idx}
                               onClick={() => setCreatorGuess(name)}
-                              className="rounded-2xl text-white text-xl font-black tracking-wide transition-all active:scale-95 flex flex-col items-center justify-center shadow-lg border-b-8 border-b-black/30"
+                              className="rounded-xl flex flex-col items-center justify-center shadow-lg transition-transform active:scale-95 relative overflow-hidden"
                               style={{
                                 backgroundColor: buttonColor,
-                                border: isSelected ? '4px solid #ffffff' : 'none',
-                                boxShadow: isSelected ? `0 0 25px ${buttonColor}` : 'none',
-                                opacity: isSelected ? 1 : 0.85,
-                                textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                                minHeight: '90px'
+                                border: isSelected ? '4px solid white' : 'none',
+                                opacity: isSelected ? 1 : 0.9,
                               }}
                             >
-                              <span className="text-3xl mb-1">{['🎵', '🎸', '🎹', '🥁', '🎷', '🎤', '🎻', '🎺'][idx % 8]}</span>
-                              <span className="truncate max-w-full font-headings text-base">{name}</span>
+                              {isSelected && (
+                                <div className="absolute inset-0 border-8 border-white/20 pointer-events-none rounded-xl" />
+                              )}
+                              <span className="text-4xl mb-2 drop-shadow-md">
+                                {['🎵', '🎸', '🎹', '🥁', '🎷', '🎤', '🎻', '🎺'][idx % 8]}
+                              </span>
+                              <span className="text-white font-black text-xl truncate w-full px-2 drop-shadow-md">
+                                {name}
+                              </span>
                             </button>
                           );
                         })}
                     </div>
-                  </div>
+                  </>
                 )}
 
                 {/* Rating selection (everyone rates!) */}
-                <div className="bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)] rounded-2xl p-4 flex flex-col items-center mt-4">
-                  <label className="text-xs text-[rgba(255,255,255,0.5)] uppercase tracking-wider font-bold mb-2">
-                    Donnez une note de qualité !
+                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 flex flex-col items-center mb-4">
+                  <label className="text-sm text-white font-bold uppercase tracking-widest mb-3">
+                    Notez ce morceau !
                   </label>
-                  <div className="flex justify-center items-center gap-2">
+                  <div className="flex justify-center items-center gap-4">
                     {[1, 2, 3, 4, 5].map((star) => (
-                      <div
+                      <button
                         key={star}
                         onClick={() => setSongRating(star)}
-                        className="p-1.5 transition-all transform active:scale-125 cursor-pointer"
-                        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                        className="transition-transform active:scale-125 focus:outline-none"
                       >
                         <svg
-                          xmlns="http://www.w3.org/2000/svg"
                           viewBox="0 0 24 24"
-                          width="42"
-                          height="42"
-                          fill={songRating >= star ? '#fbbf24' : 'rgba(255,255,255,0.15)'}
-                          style={{
-                            width: '42px',
-                            height: '42px',
-                            filter: songRating >= star ? 'drop-shadow(0 0 8px rgba(251,191,36,0.7))' : 'none'
-                          }}
+                          className="w-10 h-10 md:w-12 md:h-12 drop-shadow-lg"
+                          fill={songRating >= star ? '#fbbf24' : 'rgba(255,255,255,0.2)'}
                         >
                           <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
                         </svg>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -434,9 +418,13 @@ function PlayLobbyContent() {
                 <button
                   disabled={(!creatorGuess && songCreatorExclusion !== nickname) || songRating === 0}
                   onClick={submitVote}
-                  className="btn-neon w-full py-4 text-lg font-black uppercase tracking-wider mt-4"
+                  className={`w-full py-5 rounded-xl font-black text-2xl uppercase tracking-wider text-white transition-all shadow-[0_6px_0_rgba(0,0,0,0.3)] ${
+                    (!creatorGuess && songCreatorExclusion !== nickname) || songRating === 0
+                      ? 'bg-slate-500 opacity-50 cursor-not-allowed'
+                      : 'bg-blue-600 active:translate-y-2 active:shadow-none'
+                  }`}
                 >
-                  Envoyer mon vote 🗳️
+                  Valider
                 </button>
               </div>
             )}

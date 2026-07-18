@@ -112,6 +112,31 @@ export default function HostPage() {
     }
   }, [phase, revealedThisRound, animationStepIdx, animationSteps]);
 
+  // Automatic Kahoot-style Podium Animation Sequence
+  useEffect(() => {
+    if (phase === 'LEADERBOARD') {
+      if (podiumRevealStep === 3) {
+        const timer = setTimeout(() => setPodiumRevealStep(2), 2000);
+        return () => clearTimeout(timer);
+      } else if (podiumRevealStep === 2) {
+        const timer = setTimeout(() => setPodiumRevealStep(1), 2000);
+        return () => clearTimeout(timer);
+      } else if (podiumRevealStep === 1) {
+        const timer = setTimeout(() => {
+          setPodiumRevealStep(0);
+          confetti({
+            particleCount: 400,
+            spread: 120,
+            origin: { y: 0.6 },
+          });
+        }, 4000);
+        return () => clearTimeout(timer);
+      }
+    } else if (podiumRevealStep !== 3) {
+      setPodiumRevealStep(3); // Reset when not in leaderboard
+    }
+  }, [phase, podiumRevealStep]);
+
   // 2. Initialize room state on server and start polling
   useEffect(() => {
     if (!roomCode || !hostId) return;
@@ -366,100 +391,78 @@ export default function HostPage() {
         
         {/* LOBBY PHASE */}
         {phase === 'LOBBY' && (
-          <div className="flex flex-col items-center justify-center w-full max-w-4xl mx-auto gap-8 animate-fade-in">
-            {/* Top Bar PIN information */}
-            <div className="w-full glass-panel p-6 flex flex-col md:flex-row items-center justify-between gap-6 border-b-4 border-b-[hsl(var(--primary))] shadow-[0_0_20px_hsla(var(--primary),0.2)]">
-              <div className="text-center md:text-left">
-                <span className="text-xs uppercase tracking-widest text-[hsl(var(--secondary))] font-black mb-1 block">
-                  Rejoindre sur téléphone
+          <div className="w-full min-h-screen flex flex-col pt-32 px-8">
+            {/* Top White Banner (Kahoot Style) */}
+            <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[95%] max-w-6xl bg-white rounded-xl shadow-2xl flex flex-row items-center justify-between p-6 z-20">
+              <div className="flex flex-col pl-6">
+                <span className="text-slate-600 font-bold text-xl md:text-2xl">
+                  Rejoignez sur <span className="text-slate-900 font-black">play.suno.game</span>
                 </span>
-                <h1 className="text-3xl font-black text-white tracking-tight">play.suno.game</h1>
+                <div className="flex items-center gap-4 mt-2">
+                  <span className="text-slate-900 font-black text-4xl md:text-6xl tracking-tight">Code PIN:</span>
+                  <span className="text-slate-900 font-black text-5xl md:text-7xl tracking-widest bg-slate-100 px-4 py-2 rounded-lg">{roomCode || '----'}</span>
+                </div>
               </div>
               
-              <div className="bg-white/5 border border-white/10 rounded-2xl px-8 py-3 text-center">
-                <span className="text-xs text-white/55 uppercase tracking-wider block mb-1">
-                  CODE PIN
-                </span>
-                <div className="text-5xl font-black tracking-widest text-[hsl(var(--primary))] animate-pulse">
-                  {roomCode || '----'}
-                </div>
-              </div>
-            </div>
-
-            {/* Centered QR code and details */}
-            <div className="flex flex-col md:flex-row items-center justify-center gap-8 w-full">
               {joinUrl && (
-                <div className="glass-panel p-6 flex flex-col items-center text-center max-w-sm">
-                  <div className="p-4 bg-white rounded-3xl shadow-2xl transition-transform hover:scale-105 duration-300">
+                <div className="pr-6 flex items-center gap-6">
+                  <div className="bg-slate-100 p-2 rounded-xl">
                     <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(joinUrl)}`}
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(joinUrl)}`}
                       alt="QR Code"
-                      className="w-[200px] h-[200px] block rounded-xl"
+                      className="w-[120px] h-[120px] rounded-lg"
                     />
                   </div>
-                  <span className="text-xs text-white/40 mt-4 leading-relaxed">
-                    Scannez le QR Code pour rejoindre directement la partie !
-                  </span>
-                  <button onClick={copyToClipboard} className="btn-neon-outline text-xs mt-4 w-full py-2">
-                    {copied ? 'Lien copié !' : 'Copier le lien direct'}
-                  </button>
                 </div>
               )}
-
-              {/* Theme Settings and Start Game */}
-              <div className="glass-panel p-6 flex flex-col justify-between flex-1 min-h-[300px]">
-                <div className="flex flex-col gap-4">
-                  <h3 className="text-xl font-bold text-white mb-2">Paramètres de la partie</h3>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs text-white/50 uppercase tracking-wider">Thème / Inspiration</label>
-                    <input 
-                      type="text" 
-                      value={theme} 
-                      onChange={(e) => setTheme(e.target.value)}
-                      className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-base focus:outline-none focus:border-[hsl(var(--primary))]"
-                    />
-                  </div>
-                </div>
-
-                <button 
-                  disabled={players.length === 0}
-                  onClick={startSubmissionPhase}
-                  className={`btn-neon w-full py-4 mt-6 text-lg font-black ${players.length === 0 ? 'opacity-50 cursor-not-allowed' : 'animate-pulse-glow'}`}
-                >
-                  COMMENCER LE JEU ({players.length} Joueur{players.length > 1 ? 's' : ''})
-                </button>
-              </div>
             </div>
 
-            {/* Players List Grid */}
-            <div className="w-full glass-panel p-6 flex flex-col min-h-[250px]">
-              <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-3">
-                <h2 className="text-xl font-bold text-white">Joueurs connectés</h2>
-                <span className="text-sm px-4 py-1.5 rounded-full bg-white/10 font-bold text-[hsl(var(--secondary))]">
-                  {players.length}
-                </span>
+            {/* Start Button & Settings Container (Right Aligned) */}
+            <div className="absolute top-48 right-[2.5%] md:right-[5%] z-20 flex flex-col gap-3 w-72">
+              <div className="bg-white/20 backdrop-blur-md border border-white/30 p-4 rounded-xl shadow-xl">
+                <label className="text-xs text-white uppercase font-bold tracking-widest mb-2 block text-center">Thème Imposé</label>
+                <input 
+                  type="text" 
+                  value={theme} 
+                  onChange={(e) => setTheme(e.target.value)}
+                  className="w-full bg-white text-slate-900 font-bold rounded-lg px-3 py-2 text-center focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
+                  placeholder="Ex: Chanson d'été..."
+                />
               </div>
+              <button 
+                disabled={players.length === 0}
+                onClick={startSubmissionPhase}
+                className={`w-full py-4 rounded-xl font-black text-2xl uppercase tracking-wider text-white transition-all shadow-[0_6px_0_rgba(0,0,0,0.3)] ${
+                  players.length === 0 
+                    ? 'bg-slate-500 opacity-50 cursor-not-allowed' 
+                    : 'bg-blue-600 hover:bg-blue-500 hover:-translate-y-1 hover:shadow-[0_8px_0_rgba(0,0,0,0.3)] active:translate-y-2 active:shadow-none'
+                }`}
+              >
+                Démarrer
+              </button>
+            </div>
 
+            {/* Players Grid Area */}
+            <div className="flex-1 mt-20 flex flex-wrap content-start gap-4 justify-start max-w-6xl mx-auto w-full">
+              <div className="w-full mb-4 flex items-center justify-between">
+                <div className="bg-black/30 backdrop-blur-sm px-6 py-2 rounded-full border border-white/10 shadow-inner">
+                  <span className="text-white font-bold text-xl">{players.length} Joueur{players.length > 1 ? 's' : ''}</span>
+                </div>
+              </div>
+              
               {players.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-center text-white/30">
-                  <div className="w-12 h-12 rounded-full border-2 border-dashed border-white/20 animate-spin mb-4" />
-                  <p className="text-base font-semibold">En attente de participants...</p>
+                <div className="w-full flex items-center justify-center mt-20">
+                  <span className="text-white/60 text-2xl font-bold animate-pulse">En attente de joueurs...</span>
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-6 justify-center items-center max-w-4xl mx-auto my-8">
-                  {players.map((nickname, idx) => (
-                    <div 
-                      key={idx} 
-                      className="bg-white text-slate-950 font-extrabold text-2xl px-8 py-4 rounded-2xl border-2 border-slate-200 animate-bounce-in flex items-center justify-center shadow-lg"
-                      style={{ 
-                        animationDelay: `${idx * 0.05}s`,
-                        boxShadow: '0 6px 0 #cbd5e1, 0 10px 20px rgba(0,0,0,0.2)'
-                      }}
-                    >
-                      {nickname}
-                    </div>
-                  ))}
-                </div>
+                players.map((nickname, idx) => (
+                  <div 
+                    key={idx} 
+                    className="w-48 h-16 bg-[#8b5cf6] text-white font-extrabold text-xl px-4 py-2 rounded shadow-md flex items-center justify-center overflow-hidden animate-bounce-in"
+                  >
+                    <span className="truncate">{nickname}</span>
+                  </div>
+                ))
               )}
             </div>
           </div>
@@ -467,55 +470,49 @@ export default function HostPage() {
         
         {/* SUBMISSION PHASE */}
         {phase === 'SUBMISSION' && (
-          <div className="glass-panel p-8 flex flex-col items-center w-full max-w-4xl mx-auto animate-fade-in">
-            <span className="text-xs uppercase tracking-widest text-[hsl(var(--secondary))] font-black mb-2">Étape de Soumission</span>
-            <h1 className="text-4xl font-black text-white text-center mb-6">Phase de Création & Soumission</h1>
-            
-            <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 text-center mb-8 shadow-inner">
-              <span className="text-xs text-white/40 uppercase tracking-wider block mb-2">Thème imposé</span>
-              <p className="text-3xl font-black text-[hsl(var(--primary))] font-headings">"{theme}"</p>
+          <div className="w-full min-h-screen flex flex-col pt-32 px-8">
+            <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[95%] max-w-6xl bg-white rounded-xl shadow-2xl flex flex-row items-center justify-between p-6 z-20">
+              <div className="flex flex-col pl-6">
+                <span className="text-slate-600 font-bold text-xl">Thème imposé pour cette partie :</span>
+                <span className="text-slate-900 font-black text-4xl md:text-5xl tracking-tight mt-2">"{theme}"</span>
+              </div>
+              <div className="pr-6">
+                <div className="bg-slate-100 px-6 py-4 rounded-xl flex flex-col items-center">
+                  <span className="text-slate-500 font-bold text-sm uppercase tracking-wider mb-1">Avancement</span>
+                  <span className="text-slate-900 font-black text-4xl">{readyPlayers.length} / {players.length}</span>
+                </div>
+              </div>
             </div>
 
-            <div className="w-full">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="font-bold text-xl text-white">Avancement ({readyPlayers.length} / {players.length})</h3>
-                <span className="text-sm font-bold text-[hsl(var(--secondary))] bg-white/10 px-3 py-1 rounded-full">
-                  {Math.round((readyPlayers.length / (players.length || 1)) * 100)}% prêts
-                </span>
-              </div>
-              
-              <div className="flex flex-wrap gap-6 justify-center items-center max-w-4xl mx-auto my-8">
-                {players.map((nickname, idx) => {
-                  const isReady = readyPlayers.includes(nickname);
-                  return (
-                    <div 
-                      key={idx} 
-                      className={`font-extrabold text-2xl px-8 py-4 rounded-2xl border-2 transition-all duration-300 flex items-center justify-center animate-bounce-in`}
-                      style={{
-                        backgroundColor: isReady ? '#10b981' : 'rgba(255,255,255,0.05)',
-                        color: isReady ? '#ffffff' : 'rgba(255,255,255,0.4)',
-                        borderColor: isReady ? '#34d399' : 'rgba(255,255,255,0.1)',
-                        boxShadow: isReady ? '0 6px 0 #059669, 0 10px 20px rgba(0,0,0,0.2)' : '0 6px 0 rgba(255,255,255,0.02)',
-                        transform: isReady ? 'scale(1.05)' : 'none',
-                        animationDelay: `${idx * 0.05}s`
-                      }}
-                    >
-                      <span>{nickname}</span>
-                      <span className="ml-3 text-sm font-black uppercase tracking-wider">
-                        {isReady ? '✓' : '...'}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-
+            {/* Launch Game Button */}
+            <div className="absolute top-48 right-[2.5%] md:right-[5%] z-20 flex flex-col gap-3 w-72">
               <button
                 disabled={submissions.length === 0}
                 onClick={() => startGuessingPhase(0)}
-                className={`btn-neon w-full py-4 text-lg font-black ${submissions.length === 0 ? 'opacity-50 cursor-not-allowed' : 'animate-pulse-glow'}`}
+                className={`w-full py-4 rounded-xl font-black text-xl tracking-wider text-white transition-all shadow-[0_6px_0_rgba(0,0,0,0.3)] ${
+                  submissions.length === 0 
+                    ? 'bg-slate-500 opacity-50 cursor-not-allowed' 
+                    : 'bg-blue-600 hover:bg-blue-500 hover:-translate-y-1 hover:shadow-[0_8px_0_rgba(0,0,0,0.3)] active:translate-y-2 active:shadow-none'
+                }`}
               >
-                Lancer les votes ({submissions.length} morceau(x) soumis)
+                Lancer les votes !
               </button>
+            </div>
+
+            {/* Players Grid */}
+            <div className="flex-1 mt-20 flex flex-wrap content-start gap-4 justify-start max-w-6xl mx-auto w-full">
+              {players.map((nickname, idx) => {
+                const isReady = readyPlayers.includes(nickname);
+                return (
+                  <div 
+                    key={idx} 
+                    className={`w-48 h-16 text-white font-extrabold text-xl px-4 py-2 rounded shadow-md flex items-center justify-between overflow-hidden transition-all duration-300 ${isReady ? 'bg-[#10b981]' : 'bg-[#8b5cf6]'}`}
+                  >
+                    <span className="truncate">{nickname}</span>
+                    {isReady && <span className="ml-2 bg-white/20 rounded-full w-6 h-6 flex items-center justify-center text-sm">✓</span>}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -695,72 +692,81 @@ export default function HostPage() {
 
         {/* LEADERBOARD / PODIUM PHASE */}
         {phase === 'LEADERBOARD' && (
-          <div className="glass-panel p-8 flex flex-col items-center w-full max-w-4xl mx-auto animate-fade-in">
-            <span className="text-xs uppercase tracking-widest text-[hsl(var(--secondary))] font-black mb-2">Fin de la partie</span>
-            <h1 className="text-4xl font-black text-white mb-8 font-headings">Classement Final</h1>
+          <div className="w-full min-h-screen flex flex-col pt-16 px-8 items-center justify-between">
+            <div className="text-center mt-8">
+              <span className="text-xl uppercase tracking-widest text-slate-300 font-black mb-2 block">Fin de la partie</span>
+              <h1 className="text-6xl font-black text-white font-headings tracking-widest drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]">Podium Final</h1>
+            </div>
 
             {/* Kahoot-style Animated Podium Columns */}
-            <div className="flex items-end justify-center gap-6 md:gap-12 w-full max-w-3xl h-[380px] mt-8 mb-12 border-b-2 border-white/10">
+            <div className="flex items-end justify-center gap-4 md:gap-8 w-full max-w-4xl h-[450px] mb-12">
               
               {/* 2nd Place Column */}
               {sortedLeaderboard[1] && (
-                <div className="flex flex-col items-center w-32 md:w-44 transition-all duration-1000">
+                <div className="flex flex-col items-center w-32 md:w-48 transition-all duration-1000">
                   {podiumRevealStep <= 2 ? (
-                    <div className="flex flex-col items-center animate-bounce-in">
-                      <span className="text-4xl mb-2">{sortedLeaderboard[1].rank === 1 ? '👑' : '🥈'}</span>
-                      <span className="font-bold text-white text-lg truncate max-w-full">{sortedLeaderboard[1].nickname}</span>
-                      <span className="text-[hsl(var(--secondary))] font-black mb-3">{sortedLeaderboard[1].score} pts</span>
+                    <div className="flex flex-col items-center animate-bounce-in bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl mb-4 shadow-xl">
+                      <span className="font-bold text-white text-xl truncate max-w-full mb-1">{sortedLeaderboard[1].nickname}</span>
+                      <span className="text-white/80 font-black text-lg bg-black/40 px-3 py-1 rounded-md">{sortedLeaderboard[1].score}</span>
                     </div>
                   ) : (
-                    <div className="h-[76px]" />
+                    <div className="h-[88px]" />
                   )}
                   <div 
-                    className="w-full bg-gradient-to-t from-slate-700 to-slate-500 rounded-t-3xl shadow-2xl relative flex items-center justify-center animate-rise-up"
-                    style={{ height: podiumRevealStep <= 2 ? '150px' : '0px', transition: 'height 1s ease-out' }}
+                    className="w-full bg-[#8b5cf6] rounded-t-sm shadow-2xl relative flex flex-col items-center justify-start pt-6 animate-rise-up"
+                    style={{ height: podiumRevealStep <= 2 ? '200px' : '0px', transition: 'height 1s ease-out' }}
                   >
-                    <span className="text-white font-black text-5xl opacity-40 font-headings">2</span>
+                    <div className="w-16 h-16 bg-white rotate-45 flex items-center justify-center rounded-sm">
+                      <span className="text-[#8b5cf6] -rotate-45 font-black text-3xl font-headings">2</span>
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* 1st Place Column */}
               {sortedLeaderboard[0] && (
-                <div className="flex flex-col items-center w-36 md:w-52 transition-all duration-1000">
+                <div className="flex flex-col items-center w-40 md:w-56 transition-all duration-1000">
                   {podiumRevealStep <= 1 ? (
-                    <div className="flex flex-col items-center animate-bounce-in">
-                      <span className="text-5xl mb-2 animate-bounce">👑</span>
-                      <span className="font-black text-white text-2xl truncate max-w-full font-headings">{sortedLeaderboard[0].nickname}</span>
-                      <span className="text-[hsl(var(--primary))] font-black text-xl mb-3">{sortedLeaderboard[0].score} pts</span>
+                    <div className="flex flex-col items-center animate-bounce-in bg-white/10 backdrop-blur-md px-6 py-3 rounded-xl mb-4 shadow-[0_0_30px_rgba(255,215,0,0.5)] relative">
+                      <span className="text-5xl absolute -top-8 animate-bounce">👑</span>
+                      <span className="font-black text-white text-2xl truncate max-w-full mb-1 mt-2">{sortedLeaderboard[0].nickname}</span>
+                      <span className="text-white/90 font-black text-xl bg-black/50 px-4 py-1 rounded-md">{sortedLeaderboard[0].score}</span>
                     </div>
                   ) : (
-                    <div className="h-[96px]" />
+                    <div className="h-[120px]" />
                   )}
                   <div 
-                    className="w-full bg-gradient-to-t from-[hsl(var(--primary))] to-[hsl(var(--accent))] rounded-t-3xl shadow-2xl relative flex items-center justify-center animate-rise-up animate-pulse-gold"
-                    style={{ height: podiumRevealStep <= 1 ? '220px' : '0px', transition: 'height 1s ease-out' }}
+                    className="w-full bg-[#8b5cf6] rounded-t-sm shadow-2xl relative flex flex-col items-center justify-start pt-6 animate-rise-up"
+                    style={{ height: podiumRevealStep <= 1 ? '300px' : '0px', transition: 'height 1s ease-out' }}
                   >
-                    <span className="text-white font-black text-6xl opacity-50 font-headings">1</span>
+                    {podiumRevealStep <= 1 && (
+                       <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-transparent to-white/20 animate-pulse-gold pointer-events-none" />
+                    )}
+                    <div className="w-20 h-20 bg-white rotate-45 flex items-center justify-center rounded-sm">
+                      <span className="text-[#8b5cf6] -rotate-45 font-black text-5xl font-headings">1</span>
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* 3rd Place Column */}
               {sortedLeaderboard[2] && (
-                <div className="flex flex-col items-center w-28 md:w-40 transition-all duration-1000">
+                <div className="flex flex-col items-center w-28 md:w-44 transition-all duration-1000">
                   {podiumRevealStep <= 3 ? (
-                    <div className="flex flex-col items-center animate-bounce-in">
-                      <span className="text-3xl mb-2">{sortedLeaderboard[2].rank === 1 ? '👑' : '🥉'}</span>
-                      <span className="font-bold text-white text-md truncate max-w-full">{sortedLeaderboard[2].nickname}</span>
-                      <span className="text-[hsl(var(--secondary))] font-black mb-3">{sortedLeaderboard[2].score} pts</span>
+                    <div className="flex flex-col items-center animate-bounce-in bg-white/10 backdrop-blur-md px-3 py-2 rounded-xl mb-4 shadow-xl">
+                      <span className="font-bold text-white text-lg truncate max-w-full mb-1">{sortedLeaderboard[2].nickname}</span>
+                      <span className="text-white/80 font-black text-md bg-black/40 px-2 py-1 rounded-md">{sortedLeaderboard[2].score}</span>
                     </div>
                   ) : (
-                    <div className="h-[64px]" />
+                    <div className="h-[80px]" />
                   )}
                   <div 
-                    className="w-full bg-gradient-to-t from-amber-800 to-amber-700 rounded-t-3xl shadow-2xl relative flex items-center justify-center animate-rise-up"
-                    style={{ height: podiumRevealStep <= 3 ? '100px' : '0px', transition: 'height 1s ease-out' }}
+                    className="w-full bg-[#8b5cf6] rounded-t-sm shadow-2xl relative flex flex-col items-center justify-start pt-6 animate-rise-up"
+                    style={{ height: podiumRevealStep <= 3 ? '130px' : '0px', transition: 'height 1s ease-out' }}
                   >
-                    <span className="text-white font-black text-4xl opacity-40 font-headings">3</span>
+                    <div className="w-14 h-14 bg-white rotate-45 flex items-center justify-center rounded-sm">
+                      <span className="text-[#8b5cf6] -rotate-45 font-black text-2xl font-headings">3</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -768,42 +774,28 @@ export default function HostPage() {
 
             {/* Remaining leaderboard list */}
             {podiumRevealStep === 0 && sortedLeaderboard.length > 3 && (
-              <div className="w-full max-w-md flex flex-col gap-2 mt-4 mb-8 animate-fade-in">
-                <h4 className="text-center font-bold text-white/50 mb-2 uppercase tracking-wider text-xs">Reste du classement</h4>
-                {sortedLeaderboard.slice(3).map((item, idx) => (
-                  <div key={idx} className="glass-panel px-4 py-3 flex items-center justify-between border-l-4 border-l-white/20">
-                    <span className="text-base font-semibold text-white/60">#{item.rank} {item.nickname}</span>
-                    <span className="text-base font-black text-white/80">{item.score} pts</span>
-                  </div>
-                ))}
+              <div className="w-full max-w-xl flex flex-col gap-2 mt-4 mb-8 animate-fade-in bg-white/10 backdrop-blur-md p-6 rounded-2xl shadow-xl">
+                <h4 className="text-center font-bold text-white/70 mb-4 uppercase tracking-widest text-sm">Suite du classement</h4>
+                <div className="max-h-64 overflow-y-auto pr-2">
+                  {sortedLeaderboard.slice(3).map((item, idx) => (
+                    <div key={idx} className="bg-white/10 hover:bg-white/20 transition-colors px-6 py-4 flex items-center justify-between rounded-lg mb-2">
+                      <span className="text-lg font-bold text-white"><span className="text-white/50 mr-3">#{item.rank}</span> {item.nickname}</span>
+                      <span className="text-lg font-black text-white bg-black/30 px-3 py-1 rounded-md">{item.score}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
-            {/* Step-by-Step Reveal Action Button */}
-            <button
-              onClick={() => {
-                if (podiumRevealStep === 3) {
-                  setPodiumRevealStep(2);
-                } else if (podiumRevealStep === 2) {
-                  setPodiumRevealStep(1);
-                } else if (podiumRevealStep === 1) {
-                  setPodiumRevealStep(0);
-                  confetti({
-                    particleCount: 300,
-                    spread: 120,
-                    origin: { y: 0.6 },
-                  });
-                } else {
-                  resetGame();
-                }
-              }}
-              className="btn-neon w-full max-w-md py-4 text-lg font-black uppercase tracking-wider shadow-lg animate-pulse-glow"
-            >
-              {podiumRevealStep === 3 && "Dévoiler la 3ème place 🥉"}
-              {podiumRevealStep === 2 && "Dévoiler la 2ème place 🥈"}
-              {podiumRevealStep === 1 && "Dévoiler le VAINQUEUR ! 👑"}
-              {podiumRevealStep === 0 && "Recommencer une partie"}
-            </button>
+            {/* Action Button */}
+            {podiumRevealStep === 0 && (
+              <button
+                onClick={resetGame}
+                className="bg-white text-slate-900 w-full max-w-md py-4 rounded-xl text-xl font-black uppercase tracking-wider shadow-[0_6px_0_rgba(255,255,255,0.4)] hover:-translate-y-1 hover:shadow-[0_8px_0_rgba(255,255,255,0.4)] transition-all mb-12"
+              >
+                Rejouer une partie
+              </button>
+            )}
           </div>
         )}
 
