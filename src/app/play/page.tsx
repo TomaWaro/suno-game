@@ -36,32 +36,51 @@ function PlayLobbyContent() {
   const pollingIntervalRef = useRef<any>(null);
   const isUpdatingRef = useRef<boolean>(false);
 
-  // Parse room query parameter on load
-  useEffect(() => {
-    const roomParam = searchParams.get('room');
-    if (roomParam) {
-      setRoomCode(roomParam);
-    }
-  }, [searchParams]);
+  const autoJoinAttempted = useRef(false);
 
-  // Attempt auto-join from localStorage on mount
+  // Parse query params and attempt auto-join from localStorage
   useEffect(() => {
+    if (autoJoinAttempted.current) return;
+    autoJoinAttempted.current = true;
+
+    const urlRoom = searchParams.get('room')?.toUpperCase();
     const savedSession = localStorage.getItem('sunogame_session');
+    
+    let initialRoom = urlRoom || '';
+    let initialNickname = '';
+    let shouldAutoJoin = false;
+
     if (savedSession) {
       try {
         const { savedRoom, savedNickname } = JSON.parse(savedSession);
-        if (savedRoom && savedNickname) {
-          setRoomCode(savedRoom);
-          setNickname(savedNickname);
-          // Auto trigger join if we have saved session
-          joinRoom(savedRoom, savedNickname);
+        initialNickname = savedNickname || '';
+
+        if (savedRoom) {
+          if (!urlRoom || urlRoom === savedRoom.toUpperCase()) {
+            // Match or no URL room -> auto-join
+            initialRoom = savedRoom.toUpperCase();
+            if (initialNickname) shouldAutoJoin = true;
+          } else {
+            // Different room in URL! -> do not auto-join, just pre-fill
+            shouldAutoJoin = false;
+          }
         }
       } catch (e) {
         console.error('Failed to parse session', e);
       }
     }
+
+    if (initialRoom) setRoomCode(initialRoom);
+    if (initialNickname) setNickname(initialNickname);
+
+    if (shouldAutoJoin && initialRoom && initialNickname) {
+      // Use setTimeout to avoid state conflicts during mount
+      setTimeout(() => {
+        joinRoom(initialRoom, initialNickname);
+      }, 0);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchParams]);
 
   // Clean up polling on unmount
   useEffect(() => {
