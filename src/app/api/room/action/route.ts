@@ -36,6 +36,7 @@ export async function POST(request: Request) {
         state.votes = [];
         state.buzzes = [];
         state.currentRoundIdx = 0;
+        state.songRevealed = false;
         break;
 
       case 'START_GUESSING':
@@ -43,6 +44,7 @@ export async function POST(request: Request) {
         state.currentRoundIdx = payload?.roundIdx ?? state.currentRoundIdx;
         state.roundStartedAt = Date.now();
         state.buzzes = [];
+        state.songRevealed = false;
         break;
 
       case 'VALIDATE_BUZZ': {
@@ -73,6 +75,7 @@ export async function POST(request: Request) {
           });
         }
         state.buzzes = [];
+        state.songRevealed = true;
         break;
       }
 
@@ -92,6 +95,7 @@ export async function POST(request: Request) {
 
       case 'CLEAR_BUZZES':
         state.buzzes = [];
+        state.songRevealed = true;
         break;
 
       case 'CONTINUE_ROUND':
@@ -102,6 +106,7 @@ export async function POST(request: Request) {
         state.buzzes = [];
         state.currentRoundIdx = 0;
         state.roundStartedAt = 0;
+        state.songRevealed = false;
         break;
 
       case 'SET_STATE':

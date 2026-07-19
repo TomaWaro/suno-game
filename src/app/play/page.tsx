@@ -26,6 +26,7 @@ function PlayLobbyContent() {
   const [serverVotes, setServerVotes] = useState<any[]>([]);
   const [buzzesList, setBuzzesList] = useState<any[]>([]);
   const [penaltiesList, setPenaltiesList] = useState<{ [key: string]: number }>({});
+  const [songRevealed, setSongRevealed] = useState<boolean>(false);
   
   // Form submissions
   const [songUrl, setSongUrl] = useState<string>('');
@@ -186,6 +187,7 @@ function PlayLobbyContent() {
           setServerVotes(state.votes || []);
           setBuzzesList(state.buzzes || []);
           setPenaltiesList(state.penalties || {});
+          setSongRevealed(!!state.songRevealed);
           
           if (state.currentRoundIdx !== undefined) {
             setCurrentRoundIdx(state.currentRoundIdx);
@@ -398,6 +400,16 @@ function PlayLobbyContent() {
                     <p className="text-white/60 font-bold">Gardez le secret, laissez les autres buzzer !</p>
                   </div>
                 ) : (() => {
+                  if (songRevealed) {
+                    return (
+                      <div className="w-full max-w-sm bg-white/10 backdrop-blur-md p-8 rounded-3xl text-center flex flex-col items-center animate-fade-in">
+                        <span className="text-6xl mb-4 animate-bounce">🎉</span>
+                        <h3 className="text-3xl font-black text-white mb-2 font-headings">Chanson Révélée !</h3>
+                        <p className="text-white/60 font-bold leading-relaxed">Regardez l'écran de l'hôte pour voir les résultats et le score...</p>
+                      </div>
+                    );
+                  }
+
                   const now = Date.now();
                   const penaltyUntil = penaltiesList[nickname] || 0;
                   const isPenalty = penaltyUntil > now;

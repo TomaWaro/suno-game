@@ -23,6 +23,11 @@ export async function POST(request: Request) {
         return state;
       }
 
+      if (state.songRevealed) {
+        buzzError = 'La chanson a déjà été révélée !';
+        return state;
+      }
+
       // Check penalty cooldown
       const penaltyUntil = state.penalties?.[trimmedNickname] || 0;
       const now = Date.now();

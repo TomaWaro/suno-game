@@ -16,6 +16,7 @@ export interface RoomState {
   roundStartedAt?: number;
   buzzes?: BuzzItem[];
   penalties?: { [nickname: string]: number };
+  songRevealed?: boolean;
 }
 
 export async function GET(request: Request) {
