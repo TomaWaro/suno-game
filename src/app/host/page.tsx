@@ -1055,8 +1055,10 @@ export default function HostPage() {
                     className="w-full bg-[#8b5cf6] rounded-t-2xl shadow-2xl relative flex flex-col items-center justify-center gap-3 py-6 animate-rise-up z-0 border-t-2 border-purple-400/30"
                     style={{ height: podiumRevealStep <= 2 ? '220px' : '0px', transition: 'height 1s ease-out' }}
                   >
-                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(255,255,255,0.3)] border-4 border-slate-300/60 z-10">
-                      <span className="text-[#8b5cf6] font-black text-3xl font-headings">2</span>
+                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(255,255,255,0.3)] border-4 border-slate-300/60 z-10 overflow-hidden">
+                      <span className="text-[#8b5cf6] font-black text-3xl font-headings leading-none flex items-center justify-center w-full h-full text-center select-none pt-0.5">
+                        2
+                      </span>
                     </div>
                     {podiumRevealStep <= 2 && (
                       <span className="text-white font-black text-xl drop-shadow-md animate-fade-in">{sortedLeaderboard[1].score} pts</span>
@@ -1083,8 +1085,10 @@ export default function HostPage() {
                     {podiumRevealStep <= 0 && (
                        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-transparent to-white/20 animate-pulse-gold pointer-events-none rounded-t-2xl" />
                     )}
-                    <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(255,255,255,0.4)] border-4 border-yellow-400/70 z-10">
-                      <span className="text-[#8b5cf6] font-black text-5xl font-headings">1</span>
+                    <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(255,255,255,0.4)] border-4 border-yellow-400/70 z-10 overflow-hidden">
+                      <span className="text-[#8b5cf6] font-black text-4xl font-headings leading-none flex items-center justify-center w-full h-full text-center select-none pt-0.5">
+                        1
+                      </span>
                     </div>
                     {podiumRevealStep <= 0 && (
                       <span className="text-white font-black text-2xl drop-shadow-md animate-fade-in z-10">{sortedLeaderboard[0].score} pts</span>
@@ -1107,8 +1111,10 @@ export default function HostPage() {
                     className="w-full bg-[#8b5cf6] rounded-t-2xl shadow-2xl relative flex flex-col items-center justify-center gap-2 py-4 animate-rise-up z-0 border-t-2 border-amber-600/40"
                     style={{ height: podiumRevealStep <= 3 ? '150px' : '0px', transition: 'height 1s ease-out' }}
                   >
-                    <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(255,255,255,0.3)] border-4 border-amber-600/50 z-10">
-                      <span className="text-[#8b5cf6] font-black text-2xl font-headings">3</span>
+                    <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(255,255,255,0.3)] border-4 border-amber-600/50 z-10 overflow-hidden">
+                      <span className="text-[#8b5cf6] font-black text-2xl font-headings leading-none flex items-center justify-center w-full h-full text-center select-none pt-0.5">
+                        3
+                      </span>
                     </div>
                     {podiumRevealStep <= 3 && (
                       <span className="text-white font-black text-lg drop-shadow-md animate-fade-in">{sortedLeaderboard[2].score} pts</span>
