@@ -25,7 +25,13 @@ export async function POST(request: Request) {
     // Resolve short suno.com/s/ share links
     if (sunoUrl.includes('/s/')) {
       try {
-        const res = await fetch(sunoUrl, { method: 'HEAD', redirect: 'follow' });
+        const res = await fetch(sunoUrl, { 
+          method: 'GET', 
+          redirect: 'follow',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          }
+        });
         resolvedUrl = res.url;
       } catch (e) {
         console.error('Failed to resolve Suno short link:', e);

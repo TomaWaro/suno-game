@@ -33,6 +33,8 @@ function PlayLobbyContent() {
   
   // Safety self-voting exclusion key
   const [songCreatorExclusion, setSongCreatorExclusion] = useState<string>('');
+  const [submitError, setSubmitError] = useState<string>('');
+  const [submitLoading, setSubmitLoading] = useState<boolean>(false);
 
   const pollingIntervalRef = useRef<any>(null);
   const isUpdatingRef = useRef<boolean>(false);
@@ -210,6 +212,8 @@ function PlayLobbyContent() {
   // Submit Suno URL anonymously
   const submitSong = async () => {
     if (!songUrl) return;
+    setSubmitError('');
+    setSubmitLoading(true);
     isUpdatingRef.current = true;
     try {
       const res = await fetch('/api/room/submit', {
@@ -222,11 +226,13 @@ function PlayLobbyContent() {
         setSubmittedSong(true);
       } else {
         const data = await res.json();
-        alert(data.error || 'Erreur lors de la soumission.');
+        setSubmitError(data.error || 'Erreur lors de la soumission.');
       }
     } catch (e) {
       console.error('Song submission error:', e);
+      setSubmitError('Erreur de connexion. Veuillez réessayer.');
     } finally {
+      setSubmitLoading(false);
       setTimeout(() => {
         isUpdatingRef.current = false;
       }, 1500);
@@ -306,6 +312,12 @@ function PlayLobbyContent() {
               </div>
             ) : (
               <div className="flex flex-col gap-5">
+                {submitError && (
+                  <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/35 text-red-400 text-sm text-center">
+                    {submitError}
+                  </div>
+                )}
+
                 <div className="flex flex-col gap-2">
                   <label className="text-xs text-[rgba(255,255,255,0.6)] uppercase tracking-wider font-bold">Lien direct Suno AI</label>
                   <input
@@ -313,16 +325,17 @@ function PlayLobbyContent() {
                     value={songUrl}
                     onChange={(e) => setSongUrl(e.target.value)}
                     placeholder="https://suno.com/song/..."
+                    disabled={submitLoading}
                     className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-xl px-4 py-3.5 text-white text-sm focus:outline-none focus:border-[hsl(var(--secondary))]"
                   />
                 </div>
 
                 <button 
-                  disabled={!songUrl}
+                  disabled={!songUrl || submitLoading}
                   onClick={submitSong}
                   className="btn-neon w-full py-4 text-base font-black uppercase tracking-wider"
                 >
-                  Envoyer mon morceau
+                  {submitLoading ? 'Envoi en cours...' : 'Envoyer mon morceau'}
                 </button>
               </div>
             )}
