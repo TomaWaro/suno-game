@@ -69,6 +69,8 @@ export default function HostPage() {
     setHostId(newHostId);
   }, []);
 
+  const [currentSongCreator, setCurrentSongCreator] = useState<string>('');
+
   const syncState = (data: any) => {
     setPhase(data.phase);
     setGameMode(data.gameMode || 'SUNO');
@@ -82,6 +84,9 @@ export default function HostPage() {
     setRoundStartedAt(data.roundStartedAt);
     setBuzzes(data.buzzes || []);
     setPenalties(data.penalties || {});
+    if (data.currentSongCreator) {
+      setCurrentSongCreator(data.currentSongCreator);
+    }
   };
 
   // Sync displayScores when not animating
@@ -226,6 +231,13 @@ export default function HostPage() {
   const validateBuzz = (candidateName: string) => {
     setRevealCurrentVideo(true);
     sendAction('VALIDATE_BUZZ', { nickname: candidateName, points: 500 });
+    setRoundPointsGained([
+      {
+        nickname: candidateName,
+        points: 500,
+        reason: '🎯 Bonne réponse vocal !',
+      },
+    ]);
     confetti({
       particleCount: 150,
       spread: 80,
@@ -233,8 +245,23 @@ export default function HostPage() {
     });
   };
 
+  const revealBuzzSongWithoutWinner = () => {
+    setRevealCurrentVideo(true);
+    sendAction('CLEAR_BUZZES');
+  };
+
   const rejectBuzz = (candidateName: string) => {
     sendAction('REJECT_BUZZ', { nickname: candidateName });
+  };
+
+  const goToPodium = () => {
+    setPodiumRevealStep(4);
+    sendAction('SET_STATE', { phase: 'LEADERBOARD' });
+    confetti({
+      particleCount: 300,
+      spread: 120,
+      origin: { y: 0.6 },
+    });
   };
 
   const continueNewRound = () => {
@@ -693,74 +720,142 @@ export default function HostPage() {
             )}
 
             {gameMode === 'BUZZ' ? (
-              /* BUZZ MODE QUEUE UI */
+              /* BUZZ MODE QUEUE & REVEAL UI */
               <div className="w-full max-w-2xl flex flex-col items-center bg-black/40 border border-amber-500/30 rounded-2xl p-6 shadow-2xl">
-                <span className="text-xs font-black uppercase tracking-widest text-amber-400 mb-4">
-                  ⚡ File des Buzzes en Temps Réel
-                </span>
+                {!revealCurrentVideo ? (
+                  <>
+                    <span className="text-xs font-black uppercase tracking-widest text-amber-400 mb-4">
+                      ⚡ File des Buzzes en Temps Réel
+                    </span>
 
-                {buzzes.length > 0 ? (
-                  <div className="w-full flex flex-col items-center gap-4">
-                    {/* Top Buzz Candidate */}
-                    <div className="w-full p-6 bg-gradient-to-r from-amber-950/80 via-yellow-900/60 to-amber-950/80 border-2 border-amber-400 rounded-2xl shadow-[0_0_30px_rgba(245,158,11,0.5)] flex flex-col items-center animate-bounce-in">
-                      <span className="text-xs font-bold text-amber-300 uppercase tracking-widest mb-1">🎤 Proposition vocale en cours !</span>
-                      <span className="text-4xl font-black text-white drop-shadow-md mb-4">{buzzes[0].nickname}</span>
-                      
-                      <div className="flex gap-4 w-full">
-                        <button
-                          onClick={() => validateBuzz(buzzes[0].nickname)}
-                          className="flex-1 py-4 bg-emerald-500 hover:bg-emerald-600 border border-emerald-400 text-white font-black text-xl rounded-xl shadow-lg hover:scale-105 transition-all active:scale-95 uppercase tracking-wider flex items-center justify-center gap-2"
-                        >
-                          <span>✅</span> Valider (+500 pts)
-                        </button>
-                        <button
-                          onClick={() => rejectBuzz(buzzes[0].nickname)}
-                          className="flex-1 py-4 bg-rose-600 hover:bg-rose-700 border border-rose-500 text-white font-black text-xl rounded-xl shadow-lg hover:scale-105 transition-all active:scale-95 uppercase tracking-wider flex items-center justify-center gap-2"
-                        >
-                          <span>❌</span> Refuser (Pénalité 10s)
-                        </button>
+                    {buzzes.length > 0 ? (
+                      <div className="w-full flex flex-col items-center gap-4">
+                        {/* Top Buzz Candidate */}
+                        <div className="w-full p-6 bg-gradient-to-r from-amber-950/80 via-yellow-900/60 to-amber-950/80 border-2 border-amber-400 rounded-2xl shadow-[0_0_30px_rgba(245,158,11,0.5)] flex flex-col items-center animate-bounce-in">
+                          <span className="text-xs font-bold text-amber-300 uppercase tracking-widest mb-1">🎤 Proposition vocale en cours !</span>
+                          <span className="text-4xl font-black text-white drop-shadow-md mb-4">{buzzes[0].nickname}</span>
+                          
+                          <div className="flex gap-4 w-full">
+                            <button
+                              onClick={() => validateBuzz(buzzes[0].nickname)}
+                              className="flex-1 py-4 bg-emerald-500 hover:bg-emerald-600 border border-emerald-400 text-white font-black text-xl rounded-xl shadow-lg hover:scale-105 transition-all active:scale-95 uppercase tracking-wider flex items-center justify-center gap-2"
+                            >
+                              <span>✅</span> Valider (+500 pts)
+                            </button>
+                            <button
+                              onClick={() => rejectBuzz(buzzes[0].nickname)}
+                              className="flex-1 py-4 bg-rose-600 hover:bg-rose-700 border border-rose-500 text-white font-black text-xl rounded-xl shadow-lg hover:scale-105 transition-all active:scale-95 uppercase tracking-wider flex items-center justify-center gap-2"
+                            >
+                              <span>❌</span> Refuser (Pénalité 10s)
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Subsequent Candidates in Queue */}
+                        {buzzes.length > 1 && (
+                          <div className="w-full mt-2 flex flex-col gap-2">
+                            <span className="text-xs text-white/50 uppercase font-bold tracking-wider">Suivants dans la file :</span>
+                            <div className="flex flex-wrap gap-2">
+                              {buzzes.slice(1).map((b, idx) => (
+                                <span key={idx} className="px-4 py-2 bg-white/10 border border-white/10 rounded-xl text-white font-extrabold text-sm">
+                                  #{idx + 2} {b.nickname}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="py-8 flex flex-col items-center text-center">
+                        <span className="text-4xl mb-2 animate-bounce">⚡</span>
+                        <span className="text-xl font-extrabold text-white">En attente d'un buzz...</span>
+                        <span className="text-sm text-white/60 mt-1">Appuyez sur le bouton Buzz sur votre téléphone !</span>
+                      </div>
+                    )}
+
+                    <div className="w-full border-t border-white/10 mt-6 pt-4 flex gap-4">
+                      <button 
+                        onClick={revealBuzzSongWithoutWinner}
+                        className="py-3 px-6 bg-white/10 hover:bg-white/20 border border-white/15 text-white/80 font-bold rounded-xl text-sm uppercase tracking-wider w-full"
+                      >
+                        Passer & Révéler la chanson 🔍
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  /* REVEALED SONG & IMMEDIATE POINTS BOARD */
+                  <div className="w-full flex flex-col items-center animate-fade-in">
+                    <span className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-2">
+                      🎉 Morceau Révélé !
+                    </span>
+                    
+                    {currentSongCreator && (
+                      <div className="mb-6 text-center">
+                        <span className="text-sm text-white/60 uppercase tracking-widest block mb-1">Chanson proposée par</span>
+                        <span className="text-4xl font-black text-amber-400 font-headings drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]">
+                          {currentSongCreator}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Hit Parade Kart Race Mini-Track */}
+                    <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
+                      <h4 className="font-bold text-lg text-white mb-4">🎧 Score en direct</h4>
+                      <div className="flex flex-col gap-6 w-full">
+                        {players.map((nickname, idx) => {
+                          const score = scores[nickname] || 0;
+                          const maxScore = Math.max(2000, ...(Object.values(scores) as number[]));
+                          const percentage = Math.min(100, Math.max(0, (score / maxScore) * 100));
+                          const gainedThisRound = roundPointsGained.filter(g => g.nickname === nickname);
+                          const totalGained = gainedThisRound.reduce((sum, g) => sum + g.points, 0);
+
+                          return (
+                            <div key={idx} className="flex flex-col gap-1 relative w-full">
+                              <div className="flex justify-between items-end mb-1">
+                                <span className="font-bold text-white text-sm">{nickname}</span>
+                                <span className="text-amber-400 font-black text-sm">{score} pts</span>
+                              </div>
+                              
+                              <div className="w-full h-3 rounded-full relative bg-white/10 overflow-visible">
+                                <div 
+                                  className="absolute top-0 left-0 h-full rounded-full flex items-center justify-end bg-gradient-to-r from-purple-500 to-amber-400 transition-all duration-1000"
+                                  style={{ width: `${percentage}%` }}
+                                >
+                                  <div className="w-8 h-8 bg-white rounded-full shadow-lg transform translate-x-4 flex items-center justify-center text-sm z-10 animate-bounce">
+                                    🏎️
+                                  </div>
+                                  {totalGained > 0 && (
+                                    <div className="absolute -top-8 right-0 transform translate-x-1/2 animate-fade-up flex flex-col items-center">
+                                      <span className="font-black text-xl text-yellow-300 drop-shadow-md">+{totalGained}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
-                    {/* Subsequent Candidates in Queue */}
-                    {buzzes.length > 1 && (
-                      <div className="w-full mt-2 flex flex-col gap-2">
-                        <span className="text-xs text-white/50 uppercase font-bold tracking-wider">Suivants dans la file :</span>
-                        <div className="flex flex-wrap gap-2">
-                          {buzzes.slice(1).map((b, idx) => (
-                            <span key={idx} className="px-4 py-2 bg-white/10 border border-white/10 rounded-xl text-white font-extrabold text-sm">
-                              #{idx + 2} {b.nickname}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="py-8 flex flex-col items-center text-center">
-                    <span className="text-4xl mb-2 animate-bounce">⚡</span>
-                    <span className="text-xl font-extrabold text-white">En attente d'un buzz...</span>
-                    <span className="text-sm text-white/60 mt-1">Appuyez sur le bouton Buzz sur votre téléphone !</span>
+                    <div className="w-full flex gap-4">
+                      {currentRoundIdx + 1 < submissions.length ? (
+                        <button 
+                          onClick={() => startGuessingPhase(currentRoundIdx + 1)}
+                          className="btn-neon w-full py-4 text-base font-black uppercase tracking-wider"
+                        >
+                          Chanson suivante ⏩
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={goToPodium}
+                          className="btn-neon w-full py-4 text-base font-black uppercase tracking-wider animate-pulse-glow"
+                        >
+                          Podium Final 🏆
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
-
-                <div className="w-full border-t border-white/10 mt-6 pt-4 flex gap-4">
-                  {currentRoundIdx + 1 < submissions.length ? (
-                    <button 
-                      onClick={() => startGuessingPhase(currentRoundIdx + 1)}
-                      className="btn-neon w-full py-4 text-base font-black uppercase tracking-wider"
-                    >
-                      Chanson suivante ⏩
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={startRevealPhase}
-                      className="btn-neon w-full py-4 text-base font-black uppercase tracking-wider animate-pulse-glow"
-                    >
-                      Terminer & Révéler les Auteurs 🏆
-                    </button>
-                  )}
-                </div>
               </div>
             ) : (
               /* SUNO MODE PROGRESS UI */
