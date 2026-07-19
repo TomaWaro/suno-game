@@ -168,7 +168,7 @@ function PlayLobbyContent() {
       pollingIntervalRef.current = setInterval(async () => {
         if (isUpdatingRef.current) return;
         try {
-          const stateRes = await fetch(`/api/room/state?room=${roomCode}`);
+          const stateRes = await fetch(`/api/room/state?room=${cleanRoom}`);
           if (!stateRes.ok) return;
           const state = await stateRes.json();
 
