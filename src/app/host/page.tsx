@@ -250,11 +250,11 @@ export default function HostPage() {
 
   const calculatePoints = () => {
     const currentSong = submissions[currentRoundIdx];
-    const creator = currentSong.nickname;
+    const creator = currentSong.nickname.trim();
     
     // Filter votes specifically for the current round index
     const roundVotes = votes.filter((v) => v.roundIdx === currentRoundIdx);
-    const G = roundVotes.filter((v) => v.guess === creator).length;
+    const G = roundVotes.filter((v) => v.guess.trim() === creator).length;
     const P = players.length;
 
     const steps: PlayerPoints[][] = [];
@@ -262,7 +262,7 @@ export default function HostPage() {
     // 1. Guesser points (Time-based decay: up to 1000 pts down to 500 pts over 30s)
     const guesserPoints: PlayerPoints[] = [];
     roundVotes.forEach((v) => {
-      if (v.guess === creator) {
+      if (v.guess.trim() === creator) {
         let earnedPoints = 500;
         let speedReason = '🎯 Bonne réponse !';
 
@@ -274,7 +274,7 @@ export default function HostPage() {
         }
 
         guesserPoints.push({
-          nickname: v.voter,
+          nickname: v.voter.trim(),
           points: earnedPoints,
           reason: speedReason,
         });
@@ -326,7 +326,8 @@ export default function HostPage() {
     const finalScores = { ...scores };
     steps.forEach(step => {
       step.forEach(p => {
-        finalScores[p.nickname] = (finalScores[p.nickname] || 0) + p.points;
+        const cleanNick = p.nickname.trim();
+        finalScores[cleanNick] = (finalScores[cleanNick] || 0) + p.points;
       });
     });
 
