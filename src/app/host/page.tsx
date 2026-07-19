@@ -230,14 +230,26 @@ export default function HostPage() {
 
   const validateBuzz = (candidateName: string) => {
     setRevealCurrentVideo(true);
-    sendAction('VALIDATE_BUZZ', { nickname: candidateName, points: 500 });
-    setRoundPointsGained([
+    sendAction('VALIDATE_BUZZ', { nickname: candidateName, points: 500, creatorBonus: 250 });
+
+    const pointsList: PlayerPoints[] = [
       {
         nickname: candidateName,
         points: 500,
-        reason: '🎯 Bonne réponse vocal !',
+        reason: '🎯 Bon Buzz Vocal !',
       },
-    ]);
+    ];
+
+    if (currentSongCreator && currentSongCreator.trim() !== candidateName.trim()) {
+      pointsList.push({
+        nickname: currentSongCreator.trim(),
+        points: 250,
+        reason: '🎶 Chanson trouvée ! Bonus créateur',
+      });
+    }
+
+    setRoundPointsGained(pointsList);
+
     confetti({
       particleCount: 150,
       spread: 80,

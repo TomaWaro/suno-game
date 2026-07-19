@@ -52,6 +52,16 @@ export async function POST(request: Request) {
           const pointsGained = payload?.points ?? 500;
           state.scores[cleanNick] = (state.scores[cleanNick] || 0) + pointsGained;
 
+          // Creator bonus points for the player who proposed the song
+          const currentSong = state.submissions?.[state.currentRoundIdx];
+          if (currentSong && currentSong.nickname) {
+            const submitterNick = currentSong.nickname.trim();
+            if (submitterNick && submitterNick !== cleanNick) {
+              const creatorBonus = payload?.creatorBonus ?? 250;
+              state.scores[submitterNick] = (state.scores[submitterNick] || 0) + creatorBonus;
+            }
+          }
+
           // Record vote so race track & reveal animation step shows who got points
           state.votes = state.votes || [];
           state.votes.push({
