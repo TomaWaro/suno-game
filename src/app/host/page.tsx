@@ -5,6 +5,8 @@ import { generateRoomCode } from '@/lib/roomUtils';
 import { GameMode, GamePhase, Submission, Vote, ScoreState, BuzzItem } from '@/lib/types';
 import confetti from 'canvas-confetti';
 
+import { parseYouTubeUrl } from '@/lib/youtubeUtils';
+
 interface PlayerPoints {
   nickname: string;
   points: number;
@@ -13,8 +15,9 @@ interface PlayerPoints {
 
 const getEmbedUrl = (url: string) => {
   if (!url) return '';
-  if (url.includes('youtube.com') || url.includes('youtu.be')) {
-    return url;
+  const ytEmbed = parseYouTubeUrl(url);
+  if (ytEmbed) {
+    return ytEmbed;
   }
   return url.replace('/song/', '/embed/');
 };
