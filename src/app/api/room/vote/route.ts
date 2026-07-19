@@ -11,6 +11,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
 
+    const trimmedVoter = voter.trim();
+    const trimmedGuess = (guess || '').trim();
+
     const roomKey = `room:${roomCode.toUpperCase()}`;
     const state = await kv.get<RoomState>(roomKey);
 
@@ -19,10 +22,10 @@ export async function POST(request: Request) {
     }
 
     // Filter duplicate votes to allow players to correct their selection for this specific round
-    state.votes = state.votes.filter((v) => !(v.voter === voter && v.roundIdx === roundIdx));
+    state.votes = state.votes.filter((v) => !(v.voter === trimmedVoter && v.roundIdx === roundIdx));
     state.votes.push({
-      voter,
-      guess: guess || '',
+      voter: trimmedVoter,
+      guess: trimmedGuess,
       rating: rating || 0,
       roundIdx,
       createdAt: Date.now(),

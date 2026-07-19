@@ -12,6 +12,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
 
+    const trimmedNickname = nickname.trim();
     const roomKey = `room:${roomCode.toUpperCase()}`;
     const state = await kv.get<RoomState>(roomKey);
 
@@ -37,15 +38,15 @@ export async function POST(request: Request) {
     }
 
     // Filter duplicates to prevent multiple submissions by same player
-    state.submissions = state.submissions.filter((s) => s.nickname !== nickname);
+    state.submissions = state.submissions.filter((s) => s.nickname !== trimmedNickname);
     state.submissions.push({
-      nickname,
+      nickname: trimmedNickname,
       title: title || 'Sans titre',
       sunoUrl: embedUrl,
     });
 
-    if (!state.readyPlayers.includes(nickname)) {
-      state.readyPlayers.push(nickname);
+    if (!state.readyPlayers.includes(trimmedNickname)) {
+      state.readyPlayers.push(trimmedNickname);
     }
 
     await kv.set(roomKey, state);

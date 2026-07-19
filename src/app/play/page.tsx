@@ -129,6 +129,11 @@ function PlayLobbyContent() {
   const joinRoom = async (targetRoom: string, targetNickname: string) => {
     if (!targetRoom || !targetNickname) return;
 
+    const cleanNickname = targetNickname.trim();
+    const cleanRoom = targetRoom.trim().toUpperCase();
+
+    setNickname(cleanNickname);
+    setRoomCode(cleanRoom);
     setLoading(true);
     setError('');
 
@@ -136,7 +141,7 @@ function PlayLobbyContent() {
       const res = await fetch('/api/room/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomCode: targetRoom, nickname: targetNickname }),
+        body: JSON.stringify({ roomCode: cleanRoom, nickname: cleanNickname }),
       });
 
       if (!res.ok) {
@@ -153,8 +158,8 @@ function PlayLobbyContent() {
       
       // Save session for auto-rejoin on refresh
       localStorage.setItem('sunogame_session', JSON.stringify({
-        savedRoom: targetRoom,
-        savedNickname: targetNickname
+        savedRoom: cleanRoom,
+        savedNickname: cleanNickname
       }));
 
       // Start polling state

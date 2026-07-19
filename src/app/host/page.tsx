@@ -481,14 +481,6 @@ export default function HostPage() {
             {/* EXACT CENTER: Players Grid Area */}
             <div className="absolute top-[55%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-5xl z-10 flex flex-col">
               
-              {/* Player Count Badge - Top Left relative to the grid */}
-              <div className="flex justify-start mb-4">
-                <div className="bg-white/10 backdrop-blur-md px-6 py-2 rounded-full border border-white/20 shadow-xl inline-flex items-center gap-2">
-                  <span className="text-white font-black text-2xl">{players.length}</span>
-                  <span className="text-white/90 font-bold text-lg uppercase tracking-wider">Joueur{players.length > 1 ? 's' : ''}</span>
-                </div>
-              </div>
-              
               {/* Grid block */}
               <div className="w-full flex flex-wrap content-start gap-4 justify-center p-8 min-h-[400px] bg-black/40 backdrop-blur-sm rounded-3xl border border-white/10 shadow-2xl relative">
                 <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-[#8b5cf6]/20 to-transparent pointer-events-none rounded-b-3xl" />
@@ -567,14 +559,6 @@ export default function HostPage() {
 
             {/* EXACT CENTER: Players Grid Area */}
             <div className="absolute top-[55%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-5xl z-10 flex flex-col">
-              
-              {/* Player Count Badge - Top Left relative to the grid */}
-              <div className="flex justify-start mb-4">
-                <div className="bg-white/10 backdrop-blur-md px-6 py-2 rounded-full border border-white/20 shadow-xl inline-flex items-center gap-2">
-                  <span className="text-white font-black text-2xl">{players.length}</span>
-                  <span className="text-white/90 font-bold text-lg uppercase tracking-wider">Joueur{players.length > 1 ? 's' : ''}</span>
-                </div>
-              </div>
               
               {/* Grid block */}
               <div className="w-full flex flex-wrap content-start gap-4 justify-center p-8 min-h-[400px] bg-black/40 backdrop-blur-sm rounded-3xl border border-white/10 shadow-2xl relative">
