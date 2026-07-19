@@ -41,6 +41,7 @@ export default function HostPage() {
   const [animationStepIdx, setAnimationStepIdx] = useState<number>(-1);
   const [copied, setCopied] = useState(false);
   const [joinUrl, setJoinUrl] = useState<string>('');
+  const [showLargeQr, setShowLargeQr] = useState<boolean>(false);
 
   // Kahoot-style Suspense & Podium states
   const [isSuspense, setIsSuspense] = useState<boolean>(false);
@@ -401,60 +402,72 @@ export default function HostPage() {
         {/* LOBBY PHASE */}
         {phase === 'LOBBY' && (
           <div className="fixed inset-0 w-full h-full bg-transparent z-50 overflow-hidden">
-            {/* Glassmorphic Top Banner */}
-            <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[90%] max-w-6xl bg-black/50 backdrop-blur-xl border border-white/10 rounded-3xl shadow-[0_0_40px_rgba(139,92,246,0.3)] flex flex-row items-center justify-between p-6 z-20">
-              {/* Left: Join Info */}
+            {/* Custom Styled Top Banner */}
+            <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[90%] max-w-5xl bg-gradient-to-r from-zinc-950/80 via-purple-950/60 to-zinc-950/80 backdrop-blur-2xl border border-purple-500/30 rounded-3xl shadow-[0_0_50px_rgba(139,92,246,0.3)] flex flex-row items-center justify-between p-6 z-20">
+              {/* Left: Join URL & Copy Button */}
               <div className="flex flex-col pl-6">
-                <span className="text-white/70 font-bold text-xl md:text-2xl">
-                  Rejoignez sur <span className="text-white font-black drop-shadow-[0_0_10px_rgba(139,92,246,0.8)]">play.suno.game</span>
-                </span>
-                <div className="flex items-center gap-6 mt-2">
-                  <span className="text-white/80 font-black text-4xl tracking-tight">Code PIN:</span>
-                  <span className="text-white font-black text-6xl tracking-widest drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">{roomCode || '----'}</span>
+                <span className="text-purple-300 font-bold text-xs uppercase tracking-widest">Rejoindre la partie</span>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-white font-extrabold text-2xl md:text-3xl tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                    {typeof window !== 'undefined' ? window.location.host : 'suno-game.vercel.app'}/play
+                  </span>
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(joinUrl);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="p-2 ml-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 hover:text-white transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                    title="Copier le lien"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+                    </svg>
+                    <span className="text-xs font-bold uppercase tracking-wider">{copied ? 'Copié !' : 'Copier'}</span>
+                  </button>
                 </div>
               </div>
-              
-              {/* Right: Actions */}
-              <div className="pr-6 flex items-center gap-8">
-                {joinUrl && (
-                  <div className="flex items-center gap-4">
-                    <button 
-                      onClick={() => {
-                        navigator.clipboard.writeText(joinUrl);
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
-                      }}
-                      className="flex flex-col items-center justify-center gap-1 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold px-6 py-3 rounded-2xl transition-all shadow-sm active:scale-95"
-                    >
-                      <span className="text-3xl">{copied ? '✅' : '🔗'}</span>
-                      <span className="text-[10px] uppercase tracking-widest opacity-80">{copied ? 'Copié !' : 'Copier lien'}</span>
-                    </button>
-                    <div className="bg-white p-2 rounded-2xl shadow-lg">
-                      <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(joinUrl)}`}
-                        alt="QR Code"
-                        className="w-[100px] h-[100px] rounded-xl"
-                      />
-                    </div>
-                  </div>
-                )}
-                
-                {/* Vertical Divider */}
-                <div className="w-px h-24 bg-white/10 mx-2" />
-                
-                {/* Start Button Inside Banner */}
-                <button 
-                  disabled={players.length === 0}
-                  onClick={startSubmissionPhase}
-                  className={`px-12 py-6 rounded-2xl font-black text-2xl uppercase tracking-wider text-white transition-all ${
-                    players.length === 0 
-                      ? 'bg-white/5 text-white/30 cursor-not-allowed border border-white/5' 
-                      : 'bg-[#8b5cf6] hover:bg-[#7c3aed] hover:scale-105 hover:shadow-[0_0_30px_rgba(139,92,246,0.6)] active:scale-95 border border-[#a78bfa]'
-                  }`}
-                >
-                  Démarrer
-                </button>
+
+              {/* Middle: Code PIN */}
+              <div className="flex flex-col items-center bg-black/40 border border-white/10 px-8 py-3 rounded-2xl shadow-inner">
+                <span className="text-purple-400/80 font-bold text-xs uppercase tracking-widest">Code PIN</span>
+                <span className="text-white font-black text-5xl md:text-6xl tracking-widest mt-1 drop-shadow-[0_0_15px_rgba(139,92,246,0.6)]">
+                  {roomCode || '----'}
+                </span>
               </div>
+
+              {/* Right: Small QR Code (Clickable) */}
+              {joinUrl && (
+                <div 
+                  onClick={() => setShowLargeQr(true)}
+                  className="pr-6 flex flex-col items-center gap-1.5 group cursor-pointer"
+                  title="Cliquez pour agrandir"
+                >
+                  <div className="bg-white p-1.5 rounded-2xl shadow-lg border border-purple-500/20 group-hover:scale-105 transition-all duration-300 group-hover:shadow-[0_0_25px_rgba(139,92,246,0.4)]">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(joinUrl)}`}
+                      alt="QR Code"
+                      className="w-[72px] h-[72px] rounded-xl"
+                    />
+                  </div>
+                  <span className="text-[10px] text-white/50 uppercase tracking-widest font-bold group-hover:text-purple-300 transition-colors">Agrandir 🔍</span>
+                </div>
+              )}
+            </div>
+
+            {/* Centered Start Button */}
+            <div className="absolute top-[26%] left-1/2 -translate-x-1/2 z-20 flex flex-col items-center">
+              <button 
+                disabled={players.length === 0}
+                onClick={startSubmissionPhase}
+                className={`px-16 py-5 rounded-2xl font-black text-3xl uppercase tracking-wider text-white transition-all shadow-[0_8px_30px_rgba(139,92,246,0.3)] border ${
+                  players.length === 0 
+                    ? 'bg-white/5 text-white/20 cursor-not-allowed border-white/5 shadow-none' 
+                    : 'bg-[#8b5cf6] hover:bg-[#7c3aed] hover:scale-105 hover:shadow-[0_0_40px_rgba(139,92,246,0.8)] active:scale-95 border-[#a78bfa]'
+                }`}
+              >
+                Démarrer la partie 🚀
+              </button>
             </div>
 
             {/* EXACT CENTER: Players Grid Area */}
@@ -494,36 +507,54 @@ export default function HostPage() {
         {/* SUBMISSION PHASE */}
         {phase === 'SUBMISSION' && (
           <div className="fixed inset-0 w-full h-full bg-transparent z-50 overflow-hidden">
-            {/* Glassmorphic Top Banner */}
-            <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[90%] max-w-6xl bg-black/50 backdrop-blur-xl border border-white/10 rounded-3xl shadow-[0_0_40px_rgba(139,92,246,0.3)] flex flex-row items-center justify-between p-6 z-20">
+            {/* Custom Styled Top Banner */}
+            <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[90%] max-w-5xl bg-gradient-to-r from-zinc-950/80 via-purple-950/60 to-zinc-950/80 backdrop-blur-2xl border border-purple-500/30 rounded-3xl shadow-[0_0_50px_rgba(139,92,246,0.3)] flex flex-row items-center justify-between p-6 z-20">
               <div className="flex flex-col pl-6">
-                <span className="text-white/70 font-bold text-xl uppercase tracking-widest">Soumission des morceaux</span>
-                <span className="text-white font-black text-4xl md:text-5xl tracking-tight mt-2 drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">Création en cours...</span>
+                <span className="text-purple-300 font-bold text-xs uppercase tracking-widest">Soumission des morceaux</span>
+                <span className="text-white font-black text-3xl md:text-4xl mt-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Création en cours...</span>
               </div>
               
-              {/* Right: Actions */}
+              {/* Right Side: Avancement & Small QR Code */}
               <div className="pr-6 flex items-center gap-8">
-                <div className="bg-white/10 backdrop-blur-md px-8 py-4 rounded-2xl border border-white/20 flex flex-col items-center">
-                  <span className="text-white/70 font-bold text-xs uppercase tracking-widest mb-1">Avancement</span>
-                  <span className="text-white font-black text-4xl">{readyPlayers.length} / {players.length}</span>
+                <div className="bg-black/40 border border-white/10 px-8 py-3 rounded-2xl shadow-inner flex flex-col items-center">
+                  <span className="text-purple-400/80 font-bold text-xs uppercase tracking-widest">Avancement</span>
+                  <span className="text-white font-black text-4xl mt-1 drop-shadow-[0_0_10px_rgba(139,92,246,0.4)]">
+                    {readyPlayers.length} / {players.length}
+                  </span>
                 </div>
-                
-                {/* Vertical Divider */}
-                <div className="w-px h-24 bg-white/10 mx-2" />
-                
-                {/* Start Button Inside Banner */}
-                <button
-                  disabled={submissions.length === 0}
-                  onClick={() => startGuessingPhase(0)}
-                  className={`px-12 py-6 rounded-2xl font-black text-xl uppercase tracking-wider text-white transition-all ${
-                    submissions.length === 0 
-                      ? 'bg-white/5 text-white/30 cursor-not-allowed border border-white/5' 
-                      : 'bg-[#8b5cf6] hover:bg-[#7c3aed] hover:scale-105 hover:shadow-[0_0_30px_rgba(139,92,246,0.6)] active:scale-95 border border-[#a78bfa]'
-                  }`}
-                >
-                  Lancer les votes !
-                </button>
+
+                {joinUrl && (
+                  <div 
+                    onClick={() => setShowLargeQr(true)}
+                    className="flex flex-col items-center gap-1.5 group cursor-pointer"
+                    title="Cliquez pour agrandir"
+                  >
+                    <div className="bg-white p-1.5 rounded-2xl shadow-lg border border-purple-500/20 group-hover:scale-105 transition-all duration-300 group-hover:shadow-[0_0_25px_rgba(139,92,246,0.4)]">
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(joinUrl)}`}
+                        alt="QR Code"
+                        className="w-[60px] h-[60px] rounded-xl"
+                      />
+                    </div>
+                    <span className="text-[10px] text-white/50 uppercase tracking-widest font-bold group-hover:text-purple-300 transition-colors">Agrandir 🔍</span>
+                  </div>
+                )}
               </div>
+            </div>
+
+            {/* Centered Start Button */}
+            <div className="absolute top-[26%] left-1/2 -translate-x-1/2 z-20 flex flex-col items-center">
+              <button
+                disabled={submissions.length === 0}
+                onClick={() => startGuessingPhase(0)}
+                className={`px-16 py-5 rounded-2xl font-black text-3xl uppercase tracking-wider text-white transition-all shadow-[0_8px_30px_rgba(139,92,246,0.3)] border ${
+                  submissions.length === 0 
+                    ? 'bg-white/5 text-white/20 cursor-not-allowed border-white/5 shadow-none' 
+                    : 'bg-[#8b5cf6] hover:bg-[#7c3aed] hover:scale-105 hover:shadow-[0_0_40px_rgba(139,92,246,0.8)] active:scale-95 border-[#a78bfa]'
+                }`}
+              >
+                Lancer les votes ! 🚀
+              </button>
             </div>
 
             {/* EXACT CENTER: Players Grid Area */}
@@ -853,6 +884,43 @@ export default function HostPage() {
         )}
 
       </div>
+
+      {/* Giant QR Code Modal Overlay */}
+      {showLargeQr && (
+        <div 
+          className="fixed inset-0 w-full h-full bg-black/85 backdrop-blur-md z-[100] flex items-center justify-center animate-fade-in cursor-pointer"
+          onClick={() => setShowLargeQr(false)}
+        >
+          <div 
+            className="bg-zinc-950 border border-purple-500/20 rounded-3xl p-8 max-w-md w-[90%] flex flex-col items-center shadow-[0_0_50px_rgba(139,92,246,0.3)] transition-all scale-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-2xl font-black text-white mb-2 text-center uppercase tracking-wider">Scanner pour rejoindre</h3>
+            <p className="text-white/60 text-sm text-center mb-6">
+              Allez sur <span className="text-purple-300 font-bold">{typeof window !== 'undefined' ? window.location.host : 'suno-game.vercel.app'}/play</span>
+            </p>
+            
+            <div className="bg-white p-4 rounded-3xl shadow-[0_0_40px_rgba(255,255,255,0.2)] mb-6">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(joinUrl)}`}
+                alt="Large QR Code"
+                className="w-[260px] h-[260px] rounded-2xl"
+              />
+            </div>
+            
+            <span className="text-purple-400 font-extrabold text-3xl tracking-widest bg-white/5 border border-white/10 px-8 py-3 rounded-2xl mb-6 shadow-inner">
+              PIN : {roomCode}
+            </span>
+            
+            <button 
+              onClick={() => setShowLargeQr(false)}
+              className="w-full py-4 bg-white/10 hover:bg-white/20 border border-white/15 text-white font-bold rounded-2xl transition-colors active:scale-95"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
