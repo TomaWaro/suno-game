@@ -820,6 +820,7 @@ export default function HostPage() {
                           const percentage = Math.min(100, Math.max(0, (score / maxScore) * 100));
                           const gainedThisRound = roundPointsGained.filter(g => g.nickname === nickname);
                           const totalGained = gainedThisRound.reduce((sum, g) => sum + g.points, 0);
+                          const reasons = gainedThisRound.map(g => g.reason).join(' | ');
 
                           return (
                             <div key={idx} className="flex flex-col gap-1 relative w-full">
@@ -837,8 +838,13 @@ export default function HostPage() {
                                     🏎️
                                   </div>
                                   {totalGained > 0 && (
-                                    <div className="absolute -top-8 right-0 transform translate-x-1/2 animate-fade-up flex flex-col items-center">
-                                      <span className="font-black text-xl text-yellow-300 drop-shadow-md">+{totalGained}</span>
+                                    <div className="absolute -top-12 right-0 transform translate-x-1/2 animate-fade-up flex flex-col items-center z-50">
+                                      <span className="font-black text-2xl text-yellow-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">+{totalGained}</span>
+                                      {reasons && (
+                                        <span className="font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap text-[11px] bg-purple-600 text-white border border-white/30 shadow-md mt-0.5">
+                                          {reasons}
+                                        </span>
+                                      )}
                                     </div>
                                   )}
                                 </div>
