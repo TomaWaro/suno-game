@@ -282,41 +282,42 @@ export default function HostPage() {
     });
     if (guesserPoints.length > 0) steps.push(guesserPoints);
 
-    // 2. Creator points (Sweet Spot Calculation + Rating Bonus combined)
-    const creatorPointsList: PlayerPoints[] = [];
-    let creatorTotalPoints = 0;
-    const reasonsList: string[] = [];
-
-    // A. Sweet Spot Points
-    let creatorBasePoints = 0;
+    // 2. Creator points (Sweet Spot Calculation)
+    const sweetSpotPoints: PlayerPoints[] = [];
     if (G >= 1) {
       const maxCreatorPoints = 1000;
       const decay = 0.6;
-      creatorBasePoints = maxCreatorPoints;
+      let creatorBasePoints = maxCreatorPoints;
       if (P > 2) {
         creatorBasePoints = Math.round(maxCreatorPoints * (1 - decay * ((G - 1) / (P - 2))));
       }
-      creatorTotalPoints += creatorBasePoints;
-      reasonsList.push(`🕵️ Démasqué (${G} joueur${G > 1 ? 's' : ''}) : +${creatorBasePoints}`);
+      sweetSpotPoints.push({
+        nickname: creator,
+        points: creatorBasePoints,
+        reason: `🕵️ Démasqué (${G} joueur${G > 1 ? 's' : ''})`,
+      });
     } else {
-      reasonsList.push('Fantôme : Personne ne vous a trouvé !');
+      sweetSpotPoints.push({
+        nickname: creator,
+        points: 0,
+        reason: 'Fantôme : Personne ne vous a trouvé !',
+      });
     }
+    steps.push(sweetSpotPoints);
 
-    // B. Rating Bonus Points
+    // 3. Rating Bonus (Average star rating * 100)
+    const ratingPointsList: PlayerPoints[] = [];
     const validRatings = roundVotes.filter((v) => v.rating > 0);
     if (validRatings.length > 0) {
       const averageRating = validRatings.reduce((sum, v) => sum + v.rating, 0) / validRatings.length;
       const ratingPoints = Math.round(averageRating * 100);
-      creatorTotalPoints += ratingPoints;
-      reasonsList.push(`⭐ Note: ${averageRating.toFixed(1)}/5 : +${ratingPoints}`);
+      ratingPointsList.push({
+        nickname: creator,
+        points: ratingPoints,
+        reason: `⭐ Note: ${averageRating.toFixed(1)}/5`,
+      });
     }
-
-    creatorPointsList.push({
-      nickname: creator,
-      points: creatorTotalPoints,
-      reason: reasonsList.join(' | '),
-    });
-    steps.push(creatorPointsList);
+    if (ratingPointsList.length > 0) steps.push(ratingPointsList);
 
     // Calculate final scores for Redis
     const finalScores = { ...scores };
