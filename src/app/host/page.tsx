@@ -740,11 +740,11 @@ export default function HostPage() {
                                 🏎️
                              </div>
 
-                             {totalGained > 0 && (
-                               <div key={animationStepIdx} className="absolute -top-14 right-0 transform translate-x-1/2 animate-fade-up-slow flex flex-col items-center" style={{ position: 'absolute', top: '-60px', right: '-20px', zIndex: 50 }}>
-                                  <span className="font-black text-3xl" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255, 215, 0, 0.8), 0 2px 4px rgba(0,0,0,0.8)' }}>+{totalGained}</span>
-                                  <span className="font-bold px-3 py-1 rounded-full whitespace-nowrap mt-1 shadow-lg" style={{ backgroundColor: 'hsl(var(--primary))', color: 'white', fontSize: '12px', border: '1px solid rgba(255,255,255,0.3)' }}>{reasons}</span>
-                               </div>
+                             {totalGained > 0 && animationStepIdx < animationSteps.length && (
+                                <div key={animationStepIdx} className="absolute -top-14 right-0 transform translate-x-1/2 animate-fade-up-slow flex flex-col items-center" style={{ position: 'absolute', top: '-60px', right: '-20px', zIndex: 50 }}>
+                                   <span className="font-black text-3xl" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255, 215, 0, 0.8), 0 2px 4px rgba(0,0,0,0.8)' }}>+{totalGained}</span>
+                                   <span className="font-bold px-3 py-1 rounded-full whitespace-nowrap mt-1 shadow-lg" style={{ backgroundColor: 'hsl(var(--primary))', color: 'white', fontSize: '12px', border: '1px solid rgba(255,255,255,0.3)' }}>{reasons}</span>
+                                </div>
                              )}
                           </div>
                         </div>

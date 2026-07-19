@@ -369,8 +369,8 @@ function PlayLobbyContent() {
                       <h2 className="text-xl font-black text-white uppercase tracking-widest">Qui est l'auteur ?</h2>
                     </div>
                     
-                    {/* Massive Voting Grid */}
-                    <div className="flex-1 grid grid-cols-2 gap-2 mb-4">
+                    {/* Massive Voting Vertical List */}
+                    <div className="flex flex-col gap-3 mb-4 w-full">
                       {playersList
                         .filter((p) => p !== nickname)
                         .map((name, idx) => {
@@ -380,20 +380,20 @@ function PlayLobbyContent() {
                             <button
                               key={idx}
                               onClick={() => setCreatorGuess(name)}
-                              className="rounded-xl flex flex-col items-center justify-center shadow-lg transition-transform active:scale-95 relative overflow-hidden"
+                              className="rounded-2xl flex flex-row items-center justify-start gap-4 px-6 py-4 shadow-md transition-all active:scale-95 relative overflow-hidden w-full text-left"
                               style={{
                                 backgroundColor: buttonColor,
-                                border: isSelected ? '4px solid white' : 'none',
+                                border: isSelected ? '3px solid white' : 'none',
                                 opacity: isSelected ? 1 : 0.9,
                               }}
                             >
                               {isSelected && (
-                                <div className="absolute inset-0 border-8 border-white/20 pointer-events-none rounded-xl" />
+                                <div className="absolute inset-0 bg-white/10 pointer-events-none rounded-xl" />
                               )}
-                              <span className="text-4xl mb-2 drop-shadow-md">
+                              <span className="text-3xl drop-shadow-md">
                                 {['🎵', '🎸', '🎹', '🥁', '🎷', '🎤', '🎻', '🎺'][idx % 8]}
                               </span>
-                              <span className="text-white font-black text-xl truncate w-full px-2 drop-shadow-md">
+                              <span className="text-white font-black text-xl truncate w-[80%] drop-shadow-md">
                                 {name}
                               </span>
                             </button>
