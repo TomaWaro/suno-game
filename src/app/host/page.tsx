@@ -40,6 +40,7 @@ export default function HostPage() {
   // Local reveal states & polling counters
   const [revealedThisRound, setRevealedThisRound] = useState<boolean>(false);
   const [currentRoundVotesCount, setCurrentRoundVotesCount] = useState<number>(0);
+  const [revealCurrentVideo, setRevealCurrentVideo] = useState<boolean>(false);
   
   // Local inputs
   const [roundPointsGained, setRoundPointsGained] = useState<PlayerPoints[]>([]);
@@ -223,6 +224,7 @@ export default function HostPage() {
   };
 
   const validateBuzz = (candidateName: string) => {
+    setRevealCurrentVideo(true);
     sendAction('VALIDATE_BUZZ', { nickname: candidateName, points: 500 });
     confetti({
       particleCount: 150,
@@ -236,14 +238,17 @@ export default function HostPage() {
   };
 
   const continueNewRound = () => {
+    setRevealCurrentVideo(false);
     sendAction('CONTINUE_ROUND');
   };
 
   const startSubmissionPhase = async () => {
+    setRevealCurrentVideo(false);
     sendAction('START_SUBMISSION');
   };
 
   const startGuessingPhase = (roundIdx: number) => {
+    setRevealCurrentVideo(false);
     sendAction('START_GUESSING', { roundIdx });
   };
 
@@ -651,13 +656,39 @@ export default function HostPage() {
 
             {/* Embed Player */}
             {submissions[currentRoundIdx] && (
-              <div className="w-full aspect-[16/9] rounded-3xl overflow-hidden bg-black border-2 border-white/10 shadow-2xl mb-8 transition-all hover:border-[hsl(var(--primary))]/30">
+              <div className="w-full aspect-[16/9] rounded-3xl overflow-hidden bg-black border-2 border-white/10 shadow-2xl mb-8 relative">
                 <iframe
                   src={getEmbedUrl(submissions[currentRoundIdx].sunoUrl)}
                   className="w-full h-full border-none"
                   allow="autoplay; encrypted-media; picture-in-picture"
                   title="Song Player"
                 />
+
+                {/* Blind Test Mask Overlay during GUESSING phase (unless revealed) */}
+                {!revealCurrentVideo && (
+                  <div className="absolute inset-0 z-20 bg-gradient-to-br from-zinc-950 via-purple-950/95 to-zinc-950 flex flex-col items-center justify-center p-6 border-2 border-purple-500/30">
+                    <div className="relative w-28 h-28 mb-4 flex items-center justify-center">
+                      <div className="absolute inset-0 rounded-full border-4 border-dashed border-amber-400/50 animate-spin" style={{ animationDuration: '8s' }} />
+                      <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-purple-900 to-indigo-600 flex items-center justify-center shadow-lg border border-white/20">
+                        <span className="text-4xl animate-pulse">🎵</span>
+                      </div>
+                    </div>
+
+                    <span className="text-xs uppercase font-extrabold tracking-widest text-amber-400 mb-1">
+                      ❓ Morceau Masqué - Blind Test
+                    </span>
+                    <h3 className="text-2xl font-black text-white text-center mb-4 font-headings">
+                      Écoutez attentivement et buzzez !
+                    </h3>
+
+                    <button
+                      onClick={() => setRevealCurrentVideo(true)}
+                      className="px-5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/15 rounded-xl text-white/80 hover:text-white text-xs uppercase font-bold tracking-wider transition-all flex items-center gap-2"
+                    >
+                      <span>👁️</span> Afficher la vidéo / le titre (Hôte)
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
