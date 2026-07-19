@@ -401,55 +401,60 @@ export default function HostPage() {
         {/* LOBBY PHASE */}
         {phase === 'LOBBY' && (
           <div className="fixed inset-0 w-full h-full bg-transparent z-50 overflow-hidden">
-            {/* Top White Banner (Kahoot Style) */}
-            <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[95%] max-w-6xl bg-white rounded-xl shadow-2xl flex flex-row items-center justify-between p-6 z-20">
+            {/* Glassmorphic Top Banner */}
+            <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[90%] max-w-6xl bg-black/50 backdrop-blur-xl border border-white/10 rounded-3xl shadow-[0_0_40px_rgba(139,92,246,0.3)] flex flex-row items-center justify-between p-6 z-20">
+              {/* Left: Join Info */}
               <div className="flex flex-col pl-6">
-                <span className="text-slate-600 font-bold text-xl md:text-2xl">
-                  Rejoignez sur <span className="text-slate-900 font-black">play.suno.game</span>
+                <span className="text-white/70 font-bold text-xl md:text-2xl">
+                  Rejoignez sur <span className="text-white font-black drop-shadow-[0_0_10px_rgba(139,92,246,0.8)]">play.suno.game</span>
                 </span>
-                <div className="flex items-center gap-4 mt-2">
-                  <span className="text-slate-900 font-black text-4xl md:text-6xl tracking-tight">Code PIN:</span>
-                  <span className="text-slate-900 font-black text-5xl md:text-7xl tracking-widest bg-slate-100 px-4 py-2 rounded-lg">{roomCode || '----'}</span>
+                <div className="flex items-center gap-6 mt-2">
+                  <span className="text-white/80 font-black text-4xl tracking-tight">Code PIN:</span>
+                  <span className="text-white font-black text-6xl tracking-widest drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">{roomCode || '----'}</span>
                 </div>
               </div>
               
-              {joinUrl && (
-                <div className="pr-6 flex items-center gap-6">
-                  <button 
-                    onClick={() => {
-                      navigator.clipboard.writeText(joinUrl);
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 2000);
-                    }}
-                    className="flex flex-col items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-3 rounded-xl transition-all shadow-sm active:scale-95"
-                  >
-                    <span className="text-2xl">🔗</span>
-                    <span className="text-xs uppercase tracking-wider">{copied ? 'Copié !' : 'Copier lien'}</span>
-                  </button>
-                  <div className="bg-slate-100 p-2 rounded-xl">
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(joinUrl)}`}
-                      alt="QR Code"
-                      className="w-[120px] h-[120px] rounded-lg"
-                    />
+              {/* Right: Actions */}
+              <div className="pr-6 flex items-center gap-8">
+                {joinUrl && (
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(joinUrl);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }}
+                      className="flex flex-col items-center justify-center gap-1 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold px-6 py-3 rounded-2xl transition-all shadow-sm active:scale-95"
+                    >
+                      <span className="text-3xl">{copied ? '✅' : '🔗'}</span>
+                      <span className="text-[10px] uppercase tracking-widest opacity-80">{copied ? 'Copié !' : 'Copier lien'}</span>
+                    </button>
+                    <div className="bg-white p-2 rounded-2xl shadow-lg">
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(joinUrl)}`}
+                        alt="QR Code"
+                        className="w-[100px] h-[100px] rounded-xl"
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-
-            {/* Start Button Container (Right Aligned) */}
-            <div className="absolute top-52 right-[2.5%] md:right-[5%] z-20 flex flex-col gap-3 w-80">
-              <button 
-                disabled={players.length === 0}
-                onClick={startSubmissionPhase}
-                className={`w-full py-6 rounded-2xl font-black text-3xl uppercase tracking-wider text-white transition-all shadow-[0_8px_0_rgba(0,0,0,0.4)] ${
-                  players.length === 0 
-                    ? 'bg-slate-500 opacity-50 cursor-not-allowed' 
-                    : 'bg-[#8b5cf6] hover:bg-[#7c3aed] hover:-translate-y-2 hover:shadow-[0_12px_0_rgba(0,0,0,0.4)] active:translate-y-2 active:shadow-none'
-                }`}
-              >
-                Démarrer
-              </button>
+                )}
+                
+                {/* Vertical Divider */}
+                <div className="w-px h-24 bg-white/10 mx-2" />
+                
+                {/* Start Button Inside Banner */}
+                <button 
+                  disabled={players.length === 0}
+                  onClick={startSubmissionPhase}
+                  className={`px-12 py-6 rounded-2xl font-black text-2xl uppercase tracking-wider text-white transition-all ${
+                    players.length === 0 
+                      ? 'bg-white/5 text-white/30 cursor-not-allowed border border-white/5' 
+                      : 'bg-[#8b5cf6] hover:bg-[#7c3aed] hover:scale-105 hover:shadow-[0_0_30px_rgba(139,92,246,0.6)] active:scale-95 border border-[#a78bfa]'
+                  }`}
+                >
+                  Démarrer
+                </button>
+              </div>
             </div>
 
             {/* EXACT CENTER: Players Grid Area */}
@@ -489,32 +494,36 @@ export default function HostPage() {
         {/* SUBMISSION PHASE */}
         {phase === 'SUBMISSION' && (
           <div className="fixed inset-0 w-full h-full bg-transparent z-50 overflow-hidden">
-            <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[95%] max-w-6xl bg-white rounded-xl shadow-2xl flex flex-row items-center justify-between p-6 z-20">
+            {/* Glassmorphic Top Banner */}
+            <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[90%] max-w-6xl bg-black/50 backdrop-blur-xl border border-white/10 rounded-3xl shadow-[0_0_40px_rgba(139,92,246,0.3)] flex flex-row items-center justify-between p-6 z-20">
               <div className="flex flex-col pl-6">
-                <span className="text-slate-600 font-bold text-xl">Soumission des morceaux</span>
-                <span className="text-slate-900 font-black text-4xl md:text-5xl tracking-tight mt-2">Création en cours...</span>
+                <span className="text-white/70 font-bold text-xl uppercase tracking-widest">Soumission des morceaux</span>
+                <span className="text-white font-black text-4xl md:text-5xl tracking-tight mt-2 drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">Création en cours...</span>
               </div>
-              <div className="pr-6">
-                <div className="bg-slate-100 px-6 py-4 rounded-xl flex flex-col items-center">
-                  <span className="text-slate-500 font-bold text-sm uppercase tracking-wider mb-1">Avancement</span>
-                  <span className="text-slate-900 font-black text-4xl">{readyPlayers.length} / {players.length}</span>
+              
+              {/* Right: Actions */}
+              <div className="pr-6 flex items-center gap-8">
+                <div className="bg-white/10 backdrop-blur-md px-8 py-4 rounded-2xl border border-white/20 flex flex-col items-center">
+                  <span className="text-white/70 font-bold text-xs uppercase tracking-widest mb-1">Avancement</span>
+                  <span className="text-white font-black text-4xl">{readyPlayers.length} / {players.length}</span>
                 </div>
+                
+                {/* Vertical Divider */}
+                <div className="w-px h-24 bg-white/10 mx-2" />
+                
+                {/* Start Button Inside Banner */}
+                <button
+                  disabled={submissions.length === 0}
+                  onClick={() => startGuessingPhase(0)}
+                  className={`px-12 py-6 rounded-2xl font-black text-xl uppercase tracking-wider text-white transition-all ${
+                    submissions.length === 0 
+                      ? 'bg-white/5 text-white/30 cursor-not-allowed border border-white/5' 
+                      : 'bg-[#8b5cf6] hover:bg-[#7c3aed] hover:scale-105 hover:shadow-[0_0_30px_rgba(139,92,246,0.6)] active:scale-95 border border-[#a78bfa]'
+                  }`}
+                >
+                  Lancer les votes !
+                </button>
               </div>
-            </div>
-
-            {/* Launch Game Button */}
-            <div className="absolute top-52 right-[2.5%] md:right-[5%] z-20 flex flex-col gap-3 w-80">
-              <button
-                disabled={submissions.length === 0}
-                onClick={() => startGuessingPhase(0)}
-                className={`w-full py-6 rounded-2xl font-black text-2xl uppercase tracking-wider text-white transition-all shadow-[0_8px_0_rgba(0,0,0,0.4)] ${
-                  submissions.length === 0 
-                    ? 'bg-slate-500 opacity-50 cursor-not-allowed' 
-                    : 'bg-[#8b5cf6] hover:bg-[#7c3aed] hover:-translate-y-2 hover:shadow-[0_12px_0_rgba(0,0,0,0.4)] active:translate-y-2 active:shadow-none'
-                }`}
-              >
-                Lancer les votes !
-              </button>
             </div>
 
             {/* EXACT CENTER: Players Grid Area */}
