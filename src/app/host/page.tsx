@@ -120,10 +120,10 @@ export default function HostPage() {
         const timer = setTimeout(() => setPodiumRevealStep(3), 1000);
         return () => clearTimeout(timer);
       } else if (podiumRevealStep === 3) {
-        const timer = setTimeout(() => setPodiumRevealStep(2), 2000);
+        const timer = setTimeout(() => setPodiumRevealStep(2), 1500);
         return () => clearTimeout(timer);
       } else if (podiumRevealStep === 2) {
-        const timer = setTimeout(() => setPodiumRevealStep(1), 2000);
+        const timer = setTimeout(() => setPodiumRevealStep(1), 1500);
         return () => clearTimeout(timer);
       } else if (podiumRevealStep === 1) {
         // Drumroll suspense for 1st place
@@ -134,7 +134,7 @@ export default function HostPage() {
             spread: 120,
             origin: { y: 0.6 },
           });
-        }, 4000);
+        }, 2000);
         return () => clearTimeout(timer);
       }
     } else if (podiumRevealStep !== 4) {
@@ -773,21 +773,21 @@ export default function HostPage() {
               {sortedLeaderboard[1] && (
                 <div className="flex flex-col items-center w-32 md:w-48 transition-all duration-1000 relative">
                   {podiumRevealStep <= 2 ? (
-                    <div className="flex flex-col items-center animate-bounce-in mb-6 z-10">
+                    <div className="flex flex-col items-center animate-bounce-in mb-8 z-10">
                       <span className="font-black text-white text-2xl truncate max-w-full drop-shadow-lg">{sortedLeaderboard[1].nickname}</span>
                     </div>
                   ) : (
-                    <div className="h-[56px]" />
+                    <div className="h-[64px]" />
                   )}
                   <div 
-                    className="w-full bg-[#8b5cf6] rounded-t-sm shadow-2xl relative flex flex-col items-center justify-start pt-6 animate-rise-up z-0"
+                    className="w-full bg-[#8b5cf6] rounded-t-sm shadow-2xl relative flex flex-col items-center justify-start pt-8 animate-rise-up z-0"
                     style={{ height: podiumRevealStep <= 2 ? '200px' : '0px', transition: 'height 1s ease-out' }}
                   >
-                    <div className="w-16 h-16 bg-white rotate-45 flex items-center justify-center rounded-sm shadow-inner z-10">
-                      <span className="text-[#8b5cf6] -rotate-45 font-black text-3xl font-headings">2</span>
+                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(255,255,255,0.3)] border-4 border-slate-300/40 z-10">
+                      <span className="text-[#8b5cf6] font-black text-3xl font-headings">2</span>
                     </div>
                     {podiumRevealStep <= 2 && (
-                      <span className="text-white font-black text-xl mt-12 drop-shadow-md animate-fade-in">{sortedLeaderboard[1].score} pts</span>
+                      <span className="text-white font-black text-xl mt-6 drop-shadow-md animate-fade-in">{sortedLeaderboard[1].score} pts</span>
                     )}
                   </div>
                 </div>
@@ -797,25 +797,25 @@ export default function HostPage() {
               {sortedLeaderboard[0] && (
                 <div className="flex flex-col items-center w-40 md:w-56 transition-all duration-1000 relative">
                   {podiumRevealStep <= 0 ? (
-                    <div className="flex flex-col items-center animate-bounce-in mb-6 z-10 relative">
+                    <div className="flex flex-col items-center animate-bounce-in mb-8 z-10 relative">
                       <span className="text-7xl absolute -top-16 animate-bounce drop-shadow-[0_0_15px_rgba(255,215,0,0.8)]">👑</span>
                       <span className="font-black text-white text-3xl truncate max-w-full drop-shadow-lg mt-4">{sortedLeaderboard[0].nickname}</span>
                     </div>
                   ) : (
-                    <div className="h-[80px]" />
+                    <div className="h-[88px]" />
                   )}
                   <div 
-                    className="w-full bg-[#8b5cf6] rounded-t-sm shadow-2xl relative flex flex-col items-center justify-start pt-6 animate-rise-up z-0"
+                    className="w-full bg-[#8b5cf6] rounded-t-sm shadow-2xl relative flex flex-col items-center justify-start pt-8 animate-rise-up z-0"
                     style={{ height: podiumRevealStep <= 0 ? '300px' : '0px', transition: 'height 1s ease-out' }}
                   >
                     {podiumRevealStep <= 0 && (
                        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-transparent to-white/20 animate-pulse-gold pointer-events-none rounded-t-sm" />
                     )}
-                    <div className="w-20 h-20 bg-white rotate-45 flex items-center justify-center rounded-sm shadow-inner z-10">
-                      <span className="text-[#8b5cf6] -rotate-45 font-black text-5xl font-headings">1</span>
+                    <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(255,255,255,0.4)] border-4 border-yellow-400/50 z-10">
+                      <span className="text-[#8b5cf6] font-black text-5xl font-headings">1</span>
                     </div>
                     {podiumRevealStep <= 0 && (
-                      <span className="text-white font-black text-2xl mt-14 drop-shadow-md animate-fade-in z-10">{sortedLeaderboard[0].score} pts</span>
+                      <span className="text-white font-black text-2xl mt-8 drop-shadow-md animate-fade-in z-10">{sortedLeaderboard[0].score} pts</span>
                     )}
                   </div>
                 </div>
@@ -825,21 +825,21 @@ export default function HostPage() {
               {sortedLeaderboard[2] && (
                 <div className="flex flex-col items-center w-28 md:w-44 transition-all duration-1000 relative">
                   {podiumRevealStep <= 3 ? (
-                    <div className="flex flex-col items-center animate-bounce-in mb-6 z-10">
+                    <div className="flex flex-col items-center animate-bounce-in mb-8 z-10">
                       <span className="font-black text-white text-xl truncate max-w-full drop-shadow-lg">{sortedLeaderboard[2].nickname}</span>
                     </div>
                   ) : (
-                    <div className="h-[48px]" />
+                    <div className="h-[56px]" />
                   )}
                   <div 
                     className="w-full bg-[#8b5cf6] rounded-t-sm shadow-2xl relative flex flex-col items-center justify-start pt-6 animate-rise-up z-0"
                     style={{ height: podiumRevealStep <= 3 ? '130px' : '0px', transition: 'height 1s ease-out' }}
                   >
-                    <div className="w-14 h-14 bg-white rotate-45 flex items-center justify-center rounded-sm shadow-inner z-10">
-                      <span className="text-[#8b5cf6] -rotate-45 font-black text-2xl font-headings">3</span>
+                    <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(255,255,255,0.3)] border-4 border-amber-600/35 z-10">
+                      <span className="text-[#8b5cf6] font-black text-2xl font-headings">3</span>
                     </div>
                     {podiumRevealStep <= 3 && (
-                      <span className="text-white font-black text-lg mt-8 drop-shadow-md animate-fade-in">{sortedLeaderboard[2].score} pts</span>
+                      <span className="text-white font-black text-lg mt-4 drop-shadow-md animate-fade-in">{sortedLeaderboard[2].score} pts</span>
                     )}
                   </div>
                 </div>
