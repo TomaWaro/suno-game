@@ -1,9 +1,17 @@
+export type GameMode = 'SUNO' | 'BUZZ';
+
 export type GamePhase = 'LOBBY' | 'SUBMISSION' | 'GUESSING' | 'REVEAL' | 'LEADERBOARD';
 
 export interface Submission {
   nickname: string;
   title: string;
-  sunoUrl: string; // Parsed iframe embed URL
+  sunoUrl: string; // Embed URL (Suno or YouTube)
+  songType?: 'SUNO' | 'YOUTUBE';
+}
+
+export interface BuzzItem {
+  nickname: string;
+  timestamp: number;
 }
 
 export interface Vote {
@@ -17,3 +25,4 @@ export interface Vote {
 export interface ScoreState {
   [nickname: string]: number; // Accumulated scores
 }
+

@@ -24,6 +24,7 @@ export async function POST(request: Request) {
       if (!state) {
         state = {
           roomCode: roomCode.toUpperCase(),
+          gameMode: 'SUNO',
           phase: 'LOBBY',
           players: [],
           readyPlayers: [],
@@ -32,6 +33,8 @@ export async function POST(request: Request) {
           currentRoundIdx: 0,
           scores: {},
           hostId,
+          buzzes: [],
+          penalties: {},
         };
         await kv.set(roomKey, state);
       }

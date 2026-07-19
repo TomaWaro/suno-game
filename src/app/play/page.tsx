@@ -2,7 +2,7 @@
 
 import React, { Suspense, useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { GamePhase } from '@/lib/types';
+import { GameMode, GamePhase } from '@/lib/types';
 
 const COLORS = ['#ef4444', '#3b82f6', '#eab308', '#10b981', '#a855f7', '#f97316', '#06b6d4', '#ec4899'];
 
@@ -18,11 +18,14 @@ function PlayLobbyContent() {
   
   // Game states polled from server
   const [phase, setPhase] = useState<GamePhase>('LOBBY');
+  const [gameMode, setGameMode] = useState<GameMode>('SUNO');
   const [playersList, setPlayersList] = useState<string[]>([]);
   const [songTitle, setSongTitle] = useState<string>('');
   const [readyPlayers, setReadyPlayers] = useState<string[]>([]);
   const [currentRoundIdx, setCurrentRoundIdx] = useState<number>(0);
   const [serverVotes, setServerVotes] = useState<any[]>([]);
+  const [buzzesList, setBuzzesList] = useState<any[]>([]);
+  const [penaltiesList, setPenaltiesList] = useState<{ [key: string]: number }>({});
   
   // Form submissions
   const [songUrl, setSongUrl] = useState<string>('');
@@ -30,6 +33,9 @@ function PlayLobbyContent() {
   const [creatorGuess, setCreatorGuess] = useState<string>('');
   const [songRating, setSongRating] = useState<number>(0);
   const [submittedVote, setSubmittedVote] = useState<boolean>(false);
+  const [buzzLoading, setBuzzLoading] = useState<boolean>(false);
+  const [buzzError, setBuzzError] = useState<string>('');
+  const [penaltySeconds, setPenaltySeconds] = useState<number>(0);
   
   // Safety self-voting exclusion key
   const [songCreatorExclusion, setSongCreatorExclusion] = useState<string>('');
@@ -174,9 +180,12 @@ function PlayLobbyContent() {
 
           // Sync loop values
           setPhase(state.phase);
+          setGameMode(state.gameMode || 'SUNO');
           setPlayersList(state.players || []);
           setReadyPlayers(state.readyPlayers || []);
           setServerVotes(state.votes || []);
+          setBuzzesList(state.buzzes || []);
+          setPenaltiesList(state.penalties || {});
           
           if (state.currentRoundIdx !== undefined) {
             setCurrentRoundIdx(state.currentRoundIdx);
@@ -200,6 +209,36 @@ function PlayLobbyContent() {
     } catch (err) {
       setError('Une erreur est survenue.');
       setLoading(false);
+    }
+  };
+
+  const sendBuzz = async () => {
+    if (buzzLoading) return;
+    setBuzzLoading(true);
+    setBuzzError('');
+    try {
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate([100, 50, 100]);
+      }
+      const res = await fetch('/api/room/buzz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomCode, nickname }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setBuzzError(data.error || 'Erreur lors du buzz');
+        if (data.penaltySecondsRemaining) {
+          setPenaltySeconds(data.penaltySecondsRemaining);
+        }
+      } else {
+        if (data.buzzes) setBuzzesList(data.buzzes);
+      }
+    } catch (err) {
+      setBuzzError('Erreur de connexion.');
+    } finally {
+      setBuzzLoading(false);
     }
   };
 
@@ -301,8 +340,10 @@ function PlayLobbyContent() {
         {/* SUBMISSION FORM */}
         {phase === 'SUBMISSION' && (
           <div className="w-full glass-panel p-8 flex flex-col z-10 animate-fade-in">
-            <h2 className="text-3xl font-black text-center text-white mb-6 font-headings">Création du morceau</h2>
-            
+            <h2 className="text-3xl font-black text-center text-white mb-2 font-headings">Création du morceau</h2>
+            <p className="text-center text-xs text-white/50 mb-6 uppercase tracking-widest font-bold">
+              {gameMode === 'BUZZ' ? '⚡ Mode Buzz YouTube' : '🎵 Mode Suno Blind Test'}
+            </p>
 
             {submittedSong ? (
               <div className="text-center p-8 bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.05)] rounded-2xl">
@@ -319,12 +360,14 @@ function PlayLobbyContent() {
                 )}
 
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs text-[rgba(255,255,255,0.6)] uppercase tracking-wider font-bold">Lien direct Suno AI</label>
+                  <label className="text-xs text-[rgba(255,255,255,0.6)] uppercase tracking-wider font-bold">
+                    {gameMode === 'BUZZ' ? 'Lien d\'une vidéo / chanson YouTube' : 'Lien direct Suno AI'}
+                  </label>
                   <input
                     type="url"
                     value={songUrl}
                     onChange={(e) => setSongUrl(e.target.value)}
-                    placeholder="https://suno.com/song/..."
+                    placeholder={gameMode === 'BUZZ' ? 'https://www.youtube.com/watch?v=...' : 'https://suno.com/song/...'}
                     disabled={submitLoading}
                     className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-xl px-4 py-3.5 text-white text-sm focus:outline-none focus:border-[hsl(var(--secondary))]"
                   />
@@ -345,8 +388,78 @@ function PlayLobbyContent() {
         {/* GUESSING PHASE */}
         {phase === 'GUESSING' && (
           <div className="w-full min-h-screen flex flex-col justify-between bg-slate-900 pt-8 pb-4 px-2">
-            
-            {submittedVote ? (
+            {gameMode === 'BUZZ' ? (
+              /* BUZZ MODE PLAYER INTERFACE */
+              <div className="flex-1 flex flex-col items-center justify-center p-4">
+                {songCreatorExclusion === nickname ? (
+                  <div className="w-full max-w-sm bg-white/10 backdrop-blur-md p-8 rounded-3xl text-center">
+                    <span className="text-6xl mb-4 block">🤫</span>
+                    <h3 className="text-3xl font-black text-white mb-2 font-headings">C'est votre chanson !</h3>
+                    <p className="text-white/60 font-bold">Gardez le secret, laissez les autres buzzer !</p>
+                  </div>
+                ) : (() => {
+                  const now = Date.now();
+                  const penaltyUntil = penaltiesList[nickname] || 0;
+                  const isPenalty = penaltyUntil > now;
+                  const remSeconds = Math.max(1, Math.ceil((penaltyUntil - now) / 1000));
+                  const isTopSpeaker = buzzesList[0]?.nickname === nickname;
+                  const queuePos = buzzesList.findIndex((b) => b.nickname === nickname) + 1;
+
+                  if (isPenalty) {
+                    return (
+                      <div className="w-full max-w-sm bg-rose-950/80 border-2 border-rose-500 rounded-3xl p-8 text-center flex flex-col items-center shadow-2xl animate-pulse">
+                        <span className="text-6xl mb-4">⛔</span>
+                        <h3 className="text-3xl font-black text-white mb-2 font-headings">Pénalité en cours !</h3>
+                        <p className="text-rose-300 font-bold text-lg">
+                          Veuillez attendre encore <span className="text-white font-black text-2xl">{remSeconds}s</span> avant de ré-essayer !
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  if (isTopSpeaker) {
+                    return (
+                      <div className="w-full max-w-sm bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 border-4 border-white rounded-3xl p-8 text-center flex flex-col items-center shadow-[0_0_60px_rgba(245,158,11,0.8)] animate-pulse">
+                        <span className="text-7xl mb-4 animate-bounce">🎤</span>
+                        <h3 className="text-3xl font-black text-slate-950 mb-2 font-headings uppercase tracking-wider">C'EST À VOUS !</h3>
+                        <p className="text-slate-900 font-extrabold text-lg">Dites votre réponse à voix haute à l'hôte !</p>
+                      </div>
+                    );
+                  }
+
+                  if (queuePos > 0) {
+                    return (
+                      <div className="w-full max-w-sm bg-purple-950/80 border-2 border-purple-500/50 rounded-3xl p-8 text-center flex flex-col items-center shadow-2xl">
+                        <span className="text-6xl mb-4 animate-pulse">⏳</span>
+                        <h3 className="text-3xl font-black text-white mb-2 font-headings">Buzz Enregistré !</h3>
+                        <p className="text-purple-300 font-bold text-lg">Position #{queuePos} dans la file d'attente...</p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="flex flex-col items-center justify-center w-full">
+                      {buzzError && (
+                        <div className="p-4 rounded-xl bg-rose-500/20 border border-rose-500 text-rose-300 text-sm font-bold text-center mb-6 max-w-xs">
+                          {buzzError}
+                        </div>
+                      )}
+
+                      <button
+                        onClick={sendBuzz}
+                        disabled={buzzLoading}
+                        className="w-64 h-64 md:w-80 md:h-80 rounded-full bg-gradient-to-b from-amber-400 via-orange-500 to-red-600 border-8 border-white/30 shadow-[0_0_80px_rgba(245,158,11,0.7)] flex flex-col items-center justify-center active:scale-90 transition-all cursor-pointer hover:shadow-[0_0_100px_rgba(245,158,11,0.9)] group"
+                      >
+                        <span className="text-7xl md:text-8xl mb-2 group-hover:scale-110 transition-transform">⚡</span>
+                        <span className="text-4xl md:text-5xl font-black text-white font-headings tracking-widest uppercase drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
+                          BUZZ !
+                        </span>
+                      </button>
+                    </div>
+                  );
+                })()}
+              </div>
+            ) : submittedVote ? (
               <div className="flex-1 flex flex-col items-center justify-center">
                 <div className="w-full max-w-sm bg-white/10 backdrop-blur-md p-8 rounded-3xl text-center">
                   <span className="text-6xl mb-4 block animate-bounce">⏳</span>

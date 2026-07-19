@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { generateRoomCode } from '@/lib/roomUtils';
-import { GamePhase, Submission, Vote, ScoreState } from '@/lib/types';
+import { GameMode, GamePhase, Submission, Vote, ScoreState, BuzzItem } from '@/lib/types';
 import confetti from 'canvas-confetti';
 
 interface PlayerPoints {
@@ -13,6 +13,9 @@ interface PlayerPoints {
 
 const getEmbedUrl = (url: string) => {
   if (!url) return '';
+  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    return url;
+  }
   return url.replace('/song/', '/embed/');
 };
 
@@ -23,6 +26,7 @@ export default function HostPage() {
   
   // Game states received from server
   const [phase, setPhase] = useState<GamePhase>('LOBBY');
+  const [gameMode, setGameMode] = useState<GameMode>('SUNO');
   const [players, setPlayers] = useState<string[]>([]);
   const [readyPlayers, setReadyPlayers] = useState<string[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -30,6 +34,8 @@ export default function HostPage() {
   const [currentRoundIdx, setCurrentRoundIdx] = useState<number>(0);
   const [scores, setScores] = useState<ScoreState>({});
   const [displayScores, setDisplayScores] = useState<ScoreState>({});
+  const [buzzes, setBuzzes] = useState<BuzzItem[]>([]);
+  const [penalties, setPenalties] = useState<{ [key: string]: number }>({});
 
   // Local reveal states & polling counters
   const [revealedThisRound, setRevealedThisRound] = useState<boolean>(false);
@@ -64,6 +70,7 @@ export default function HostPage() {
 
   const syncState = (data: any) => {
     setPhase(data.phase);
+    setGameMode(data.gameMode || 'SUNO');
     setPlayers(data.players || []);
     setReadyPlayers(data.readyPlayers || []);
     setSubmissions(data.submissions || []);
@@ -72,6 +79,8 @@ export default function HostPage() {
     setScores(data.scores || {});
     setCurrentRoundVotesCount(data.currentRoundVotesCount || 0);
     setRoundStartedAt(data.roundStartedAt);
+    setBuzzes(data.buzzes || []);
+    setPenalties(data.penalties || {});
   };
 
   // Sync displayScores when not animating
@@ -207,6 +216,27 @@ export default function HostPage() {
         isUpdatingRef.current = false;
       }, 1500);
     }
+  };
+
+  const selectMode = (mode: GameMode) => {
+    sendAction('SET_GAME_MODE', { gameMode: mode });
+  };
+
+  const validateBuzz = (candidateName: string) => {
+    sendAction('VALIDATE_BUZZ', { nickname: candidateName, points: 500 });
+    confetti({
+      particleCount: 150,
+      spread: 80,
+      origin: { y: 0.6 },
+    });
+  };
+
+  const rejectBuzz = (candidateName: string) => {
+    sendAction('REJECT_BUZZ', { nickname: candidateName });
+  };
+
+  const continueNewRound = () => {
+    sendAction('CONTINUE_ROUND');
   };
 
   const startSubmissionPhase = async () => {
@@ -461,12 +491,36 @@ export default function HostPage() {
               )}
             </div>
 
-            {/* Centered Start Button */}
-            <div className="absolute top-[26%] left-1/2 -translate-x-1/2 z-20 flex flex-col items-center">
+            {/* Centered Mode Selector & Start Button */}
+            <div className="absolute top-[24%] left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-3">
+              {/* Mode Selection Pills */}
+              <div className="flex items-center gap-2 p-1.5 bg-black/60 backdrop-blur-md border border-purple-500/30 rounded-2xl shadow-xl">
+                <button
+                  onClick={() => selectMode('SUNO')}
+                  className={`px-5 py-2 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 ${
+                    gameMode === 'SUNO'
+                      ? 'bg-[#8b5cf6] text-white shadow-[0_0_15px_rgba(139,92,246,0.6)]'
+                      : 'text-white/50 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <span>🎵</span> Mode Suno
+                </button>
+                <button
+                  onClick={() => selectMode('BUZZ')}
+                  className={`px-5 py-2 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 ${
+                    gameMode === 'BUZZ'
+                      ? 'bg-amber-500 text-white shadow-[0_0_15px_rgba(245,158,11,0.6)]'
+                      : 'text-white/50 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <span>⚡</span> Mode Buzz YouTube (Vocal)
+                </button>
+              </div>
+
               <button 
                 disabled={players.length === 0}
                 onClick={startSubmissionPhase}
-                className={`px-16 py-5 rounded-2xl font-black text-3xl uppercase tracking-wider text-white transition-all shadow-[0_8px_30px_rgba(139,92,246,0.3)] border ${
+                className={`px-16 py-4 rounded-2xl font-black text-2xl uppercase tracking-wider text-white transition-all shadow-[0_8px_30px_rgba(139,92,246,0.3)] border ${
                   players.length === 0 
                     ? 'bg-white/5 text-white/20 cursor-not-allowed border-white/5 shadow-none' 
                     : 'bg-[#8b5cf6] hover:bg-[#7c3aed] hover:scale-105 hover:shadow-[0_0_40px_rgba(139,92,246,0.8)] active:scale-95 border-[#a78bfa]'
@@ -591,51 +645,125 @@ export default function HostPage() {
             <span className="text-xs uppercase tracking-widest text-[hsl(var(--secondary))] font-black mb-2">
               Morceau {currentRoundIdx + 1} / {submissions.length}
             </span>
-            <h1 className="text-4xl font-black text-white text-center mb-8 font-headings">À qui appartient ce morceau ?</h1>
+            <h1 className="text-4xl font-black text-white text-center mb-8 font-headings">
+              {gameMode === 'BUZZ' ? '⚡ Mode Buzz : À qui est ce morceau ?' : 'À qui appartient ce morceau ?'}
+            </h1>
 
-            {/* Suno Iframe Embed */}
+            {/* Embed Player */}
             {submissions[currentRoundIdx] && (
               <div className="w-full aspect-[16/9] rounded-3xl overflow-hidden bg-black border-2 border-white/10 shadow-2xl mb-8 transition-all hover:border-[hsl(var(--primary))]/30">
                 <iframe
                   src={getEmbedUrl(submissions[currentRoundIdx].sunoUrl)}
                   className="w-full h-full border-none"
-                  allow="autoplay; encrypted-media"
-                  title="Suno Player"
+                  allow="autoplay; encrypted-media; picture-in-picture"
+                  title="Song Player"
                 />
               </div>
             )}
 
-            {/* Giant Vote progress bar */}
-            <div className="w-full max-w-2xl flex flex-col items-center bg-white/5 border border-white/10 rounded-2xl p-6 shadow-xl">
-              <div className="flex justify-between items-center w-full mb-3">
-                <span className="text-sm font-bold text-white/60">VOTES ENREGISTRÉS</span>
-                <span className="text-lg font-black text-[hsl(var(--secondary))]">{currentRoundVotesCount} / {players.length}</span>
+            {gameMode === 'BUZZ' ? (
+              /* BUZZ MODE QUEUE UI */
+              <div className="w-full max-w-2xl flex flex-col items-center bg-black/40 border border-amber-500/30 rounded-2xl p-6 shadow-2xl">
+                <span className="text-xs font-black uppercase tracking-widest text-amber-400 mb-4">
+                  ⚡ File des Buzzes en Temps Réel
+                </span>
+
+                {buzzes.length > 0 ? (
+                  <div className="w-full flex flex-col items-center gap-4">
+                    {/* Top Buzz Candidate */}
+                    <div className="w-full p-6 bg-gradient-to-r from-amber-950/80 via-yellow-900/60 to-amber-950/80 border-2 border-amber-400 rounded-2xl shadow-[0_0_30px_rgba(245,158,11,0.5)] flex flex-col items-center animate-bounce-in">
+                      <span className="text-xs font-bold text-amber-300 uppercase tracking-widest mb-1">🎤 Proposition vocale en cours !</span>
+                      <span className="text-4xl font-black text-white drop-shadow-md mb-4">{buzzes[0].nickname}</span>
+                      
+                      <div className="flex gap-4 w-full">
+                        <button
+                          onClick={() => validateBuzz(buzzes[0].nickname)}
+                          className="flex-1 py-4 bg-emerald-500 hover:bg-emerald-600 border border-emerald-400 text-white font-black text-xl rounded-xl shadow-lg hover:scale-105 transition-all active:scale-95 uppercase tracking-wider flex items-center justify-center gap-2"
+                        >
+                          <span>✅</span> Valider (+500 pts)
+                        </button>
+                        <button
+                          onClick={() => rejectBuzz(buzzes[0].nickname)}
+                          className="flex-1 py-4 bg-rose-600 hover:bg-rose-700 border border-rose-500 text-white font-black text-xl rounded-xl shadow-lg hover:scale-105 transition-all active:scale-95 uppercase tracking-wider flex items-center justify-center gap-2"
+                        >
+                          <span>❌</span> Refuser (Pénalité 10s)
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Subsequent Candidates in Queue */}
+                    {buzzes.length > 1 && (
+                      <div className="w-full mt-2 flex flex-col gap-2">
+                        <span className="text-xs text-white/50 uppercase font-bold tracking-wider">Suivants dans la file :</span>
+                        <div className="flex flex-wrap gap-2">
+                          {buzzes.slice(1).map((b, idx) => (
+                            <span key={idx} className="px-4 py-2 bg-white/10 border border-white/10 rounded-xl text-white font-extrabold text-sm">
+                              #{idx + 2} {b.nickname}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="py-8 flex flex-col items-center text-center">
+                    <span className="text-4xl mb-2 animate-bounce">⚡</span>
+                    <span className="text-xl font-extrabold text-white">En attente d'un buzz...</span>
+                    <span className="text-sm text-white/60 mt-1">Appuyez sur le bouton Buzz sur votre téléphone !</span>
+                  </div>
+                )}
+
+                <div className="w-full border-t border-white/10 mt-6 pt-4 flex gap-4">
+                  {currentRoundIdx + 1 < submissions.length ? (
+                    <button 
+                      onClick={() => startGuessingPhase(currentRoundIdx + 1)}
+                      className="btn-neon w-full py-4 text-base font-black uppercase tracking-wider"
+                    >
+                      Chanson suivante ⏩
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={startRevealPhase}
+                      className="btn-neon w-full py-4 text-base font-black uppercase tracking-wider animate-pulse-glow"
+                    >
+                      Terminer & Révéler les Auteurs 🏆
+                    </button>
+                  )}
+                </div>
               </div>
-              
-              {/* Progress bar container */}
-              <div className="w-full h-5 bg-black/40 rounded-full relative overflow-hidden mb-6 shadow-inner">
-                <div 
-                  className="h-full bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--secondary))] rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${(currentRoundVotesCount / (players.length || 1)) * 100}%` }}
-                />
+            ) : (
+              /* SUNO MODE PROGRESS UI */
+              <div className="w-full max-w-2xl flex flex-col items-center bg-white/5 border border-white/10 rounded-2xl p-6 shadow-xl">
+                <div className="flex justify-between items-center w-full mb-3">
+                  <span className="text-sm font-bold text-white/60">VOTES ENREGISTRÉS</span>
+                  <span className="text-lg font-black text-[hsl(var(--secondary))]">{currentRoundVotesCount} / {players.length}</span>
+                </div>
+                
+                {/* Progress bar container */}
+                <div className="w-full h-5 bg-black/40 rounded-full relative overflow-hidden mb-6 shadow-inner">
+                  <div 
+                    className="h-full bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--secondary))] rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${(currentRoundVotesCount / (players.length || 1)) * 100}%` }}
+                  />
+                </div>
+                
+                {currentRoundIdx + 1 < submissions.length ? (
+                  <button 
+                    onClick={() => startGuessingPhase(currentRoundIdx + 1)}
+                    className="btn-neon w-full py-4 text-base font-black uppercase tracking-wider"
+                  >
+                    Chanson suivante
+                  </button>
+                ) : (
+                  <button 
+                    onClick={startRevealPhase}
+                    className="btn-neon w-full py-4 text-base font-black uppercase tracking-wider animate-pulse-glow"
+                  >
+                    Terminer l&apos;écoute & passer aux révélations
+                  </button>
+                )}
               </div>
-              
-              {currentRoundIdx + 1 < submissions.length ? (
-                <button 
-                  onClick={() => startGuessingPhase(currentRoundIdx + 1)}
-                  className="btn-neon w-full py-4 text-base font-black uppercase tracking-wider"
-                >
-                  Chanson suivante
-                </button>
-              ) : (
-                <button 
-                  onClick={startRevealPhase}
-                  className="btn-neon w-full py-4 text-base font-black uppercase tracking-wider animate-pulse-glow"
-                >
-                  Terminer l&apos;écoute & passer aux révélations
-                </button>
-              )}
-            </div>
+            )}
           </div>
         )}
 
@@ -861,14 +989,22 @@ export default function HostPage() {
               </div>
             )}
 
-            {/* Action Button */}
+            {/* Action Buttons */}
             {podiumRevealStep === 0 && (
-              <button
-                onClick={resetGame}
-                className="bg-white text-slate-900 w-full max-w-md py-4 rounded-xl text-xl font-black uppercase tracking-wider shadow-[0_6px_0_rgba(255,255,255,0.4)] hover:-translate-y-1 hover:shadow-[0_8px_0_rgba(255,255,255,0.4)] transition-all mb-12"
-              >
-                Rejouer une partie
-              </button>
+              <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xl mb-12">
+                <button
+                  onClick={continueNewRound}
+                  className="flex-1 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-slate-950 py-4 rounded-xl text-lg font-black uppercase tracking-wider shadow-lg hover:scale-105 transition-all"
+                >
+                  🔄 Continuer (Nouveau tour)
+                </button>
+                <button
+                  onClick={resetGame}
+                  className="flex-1 bg-white text-slate-900 py-4 rounded-xl text-lg font-black uppercase tracking-wider shadow-lg hover:scale-105 transition-all"
+                >
+                  Rejouer une partie
+                </button>
+              </div>
             )}
           </div>
         )}

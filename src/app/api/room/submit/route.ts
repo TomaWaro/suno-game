@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { runTransaction } from '@/lib/kv';
 import { RoomState } from '../state/route';
 import { parseSunoUrl } from '@/lib/sunoUtils';
+import { parseYouTubeUrl } from '@/lib/youtubeUtils';
 
 export async function POST(request: Request) {
   try {
@@ -33,19 +34,28 @@ export async function POST(request: Request) {
       }
     }
 
-    const embedUrl = parseSunoUrl(resolvedUrl);
+    // Attempt YouTube parsing first, then Suno parsing
+    let embedUrl = parseYouTubeUrl(resolvedUrl);
+    let songType: 'YOUTUBE' | 'SUNO' = 'YOUTUBE';
+
     if (!embedUrl) {
-      return NextResponse.json({ error: 'Lien Suno invalide' }, { status: 400 });
+      embedUrl = parseSunoUrl(resolvedUrl);
+      songType = 'SUNO';
+    }
+
+    if (!embedUrl) {
+      return NextResponse.json({ error: 'Lien Suno ou YouTube invalide' }, { status: 400 });
     }
 
     // Atomic update of submissions and readyPlayers
     const updatedState = await runTransaction<RoomState, RoomState>(roomKey, (state) => {
       // Filter duplicates to prevent multiple submissions by same player
-      state.submissions = state.submissions.filter((s) => s.nickname !== trimmedNickname);
+      state.submissions = (state.submissions || []).filter((s) => s.nickname !== trimmedNickname);
       state.submissions.push({
         nickname: trimmedNickname,
         title: title || 'Sans titre',
         sunoUrl: embedUrl,
+        songType,
       });
 
       if (!state.readyPlayers.includes(trimmedNickname)) {
