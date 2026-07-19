@@ -733,9 +733,9 @@ export default function HostPage() {
 
             {gameMode === 'BUZZ' ? (
               /* BUZZ MODE QUEUE & REVEAL UI */
-              <div className="w-full max-w-2xl flex flex-col items-center bg-black/40 border border-amber-500/30 rounded-2xl p-6 shadow-2xl">
+              <div className="w-full max-w-4xl flex flex-col items-center bg-black/40 border border-amber-500/30 rounded-3xl p-8 shadow-2xl">
                 {!revealCurrentVideo ? (
-                  <>
+                  <div className="w-full max-w-2xl flex flex-col items-center">
                     <span className="text-xs font-black uppercase tracking-widest text-amber-400 mb-4">
                       ⚡ File des Buzzes en Temps Réel
                     </span>
@@ -793,7 +793,7 @@ export default function HostPage() {
                         Passer & Révéler la chanson 🔍
                       </button>
                     </div>
-                  </>
+                  </div>
                 ) : (
                   /* REVEALED SONG & IMMEDIATE POINTS BOARD */
                   <div className="w-full flex flex-col items-center animate-fade-in">
@@ -802,18 +802,18 @@ export default function HostPage() {
                     </span>
                     
                     {currentSongCreator && (
-                      <div className="mb-6 text-center">
+                      <div className="mb-8 text-center">
                         <span className="text-sm text-white/60 uppercase tracking-widest block mb-1">Chanson proposée par</span>
-                        <span className="text-4xl font-black text-amber-400 font-headings drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]">
+                        <span className="text-5xl font-black text-amber-400 font-headings drop-shadow-[0_0_20px_rgba(245,158,11,0.6)]">
                           {currentSongCreator}
                         </span>
                       </div>
                     )}
 
                     {/* Hit Parade Kart Race Mini-Track */}
-                    <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 pt-8 pb-8 mb-6">
-                      <h4 className="font-extrabold text-xl text-white mb-10 border-b border-white/10 pb-3">🎧 Score en direct</h4>
-                      <div className="flex flex-col gap-10 w-full">
+                    <div className="w-full bg-white/5 border border-white/10 rounded-3xl p-8 mb-8 shadow-2xl">
+                      <h4 className="font-extrabold text-2xl text-white mb-6 border-b border-white/10 pb-4">🎧 Score en direct</h4>
+                      <div className="flex flex-col gap-4 w-full">
                         {players.map((nickname, idx) => {
                           const score = scores[nickname] || 0;
                           const maxScore = Math.max(2000, ...(Object.values(scores) as number[]));
@@ -823,30 +823,34 @@ export default function HostPage() {
                           const reasons = gainedThisRound.map(g => g.reason).join(' | ');
 
                           return (
-                            <div key={idx} className="flex flex-col gap-1 relative w-full">
-                              <div className="flex justify-between items-end mb-1">
-                                <span className="font-bold text-white text-sm">{nickname}</span>
-                                <span className="text-amber-400 font-black text-sm">{score} pts</span>
+                            <div key={idx} className="flex flex-col gap-2 w-full bg-white/5 border border-white/10 rounded-2xl p-4 transition-all">
+                              <div className="flex justify-between items-center w-full">
+                                <div className="flex items-center gap-3">
+                                  <span className="font-extrabold text-white text-base">{nickname}</span>
+                                  {reasons && (
+                                    <span className="font-black px-3 py-1 rounded-full text-xs bg-purple-600 text-white border border-purple-400/40 shadow-lg animate-bounce-in">
+                                      {reasons}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  {totalGained > 0 && (
+                                    <span className="font-black text-xl text-yellow-300 drop-shadow-md animate-pulse">
+                                      +{totalGained}
+                                    </span>
+                                  )}
+                                  <span className="text-amber-400 font-black text-base">{score} pts</span>
+                                </div>
                               </div>
-                              
-                              <div className="w-full h-3 rounded-full relative bg-white/10 overflow-visible">
+
+                              <div className="w-full h-4 rounded-full relative bg-white/10 overflow-visible mt-1">
                                 <div 
-                                  className="absolute top-0 left-0 h-full rounded-full flex items-center justify-end bg-gradient-to-r from-purple-500 to-amber-400 transition-all duration-1000"
+                                  className="absolute top-0 left-0 h-full rounded-full flex items-center justify-end bg-gradient-to-r from-purple-500 via-indigo-500 to-amber-400 transition-all duration-1000"
                                   style={{ width: `${percentage}%` }}
                                 >
-                                  <div className="w-8 h-8 bg-white rounded-full shadow-lg transform translate-x-4 flex items-center justify-center text-sm z-10 animate-bounce">
+                                  <div className="w-9 h-9 bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,0.6)] transform translate-x-4 flex items-center justify-center text-base z-20 border-2 border-amber-400">
                                     🏎️
                                   </div>
-                                  {totalGained > 0 && (
-                                    <div className="absolute -top-12 right-0 transform translate-x-1/2 animate-fade-up flex flex-col items-center z-50">
-                                      <span className="font-black text-2xl text-yellow-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">+{totalGained}</span>
-                                      {reasons && (
-                                        <span className="font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap text-[11px] bg-purple-600 text-white border border-white/30 shadow-md mt-0.5">
-                                          {reasons}
-                                        </span>
-                                      )}
-                                    </div>
-                                  )}
                                 </div>
                               </div>
                             </div>
@@ -859,14 +863,14 @@ export default function HostPage() {
                       {currentRoundIdx + 1 < submissions.length ? (
                         <button 
                           onClick={() => startGuessingPhase(currentRoundIdx + 1)}
-                          className="btn-neon w-full py-4 text-base font-black uppercase tracking-wider"
+                          className="btn-neon w-full py-4 text-lg font-black uppercase tracking-wider"
                         >
                           Chanson suivante ⏩
                         </button>
                       ) : (
                         <button 
                           onClick={goToPodium}
-                          className="btn-neon w-full py-4 text-base font-black uppercase tracking-wider animate-pulse-glow"
+                          className="btn-neon w-full py-4 text-lg font-black uppercase tracking-wider animate-pulse-glow"
                         >
                           Podium Final 🏆
                         </button>
