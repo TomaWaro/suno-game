@@ -706,8 +706,8 @@ export default function HostPage() {
                   title="Song Player"
                 />
 
-                {/* Blind Test Mask Overlay during GUESSING phase (unless revealed) */}
-                {!revealCurrentVideo && (
+                {/* Blind Test Mask Overlay during GUESSING phase in Mode BUZZ (unless revealed) */}
+                {gameMode === 'BUZZ' && !revealCurrentVideo && (
                   <div className="absolute inset-0 z-20 bg-gradient-to-br from-zinc-950 via-purple-950/95 to-zinc-950 flex flex-col items-center justify-center p-6 border-2 border-purple-500/30">
                     <div className="relative w-28 h-28 mb-4 flex items-center justify-center">
                       <div className="absolute inset-0 rounded-full border-4 border-dashed border-amber-400/50 animate-spin" style={{ animationDuration: '8s' }} />
