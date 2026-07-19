@@ -34,6 +34,7 @@ export async function POST(request: Request) {
       case 'START_GUESSING':
         state.phase = 'GUESSING';
         state.currentRoundIdx = payload?.roundIdx ?? state.currentRoundIdx;
+        state.roundStartedAt = Date.now();
         break;
 
       case 'SET_STATE':
@@ -51,6 +52,7 @@ export async function POST(request: Request) {
         state.votes = [];
         state.currentRoundIdx = 0;
         state.scores = {};
+        state.roundStartedAt = 0;
         break;
 
       default:

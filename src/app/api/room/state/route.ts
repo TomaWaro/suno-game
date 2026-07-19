@@ -12,6 +12,7 @@ export interface RoomState {
   currentRoundIdx: number;
   scores: ScoreState;
   hostId: string;
+  roundStartedAt?: number;
 }
 
 export async function GET(request: Request) {

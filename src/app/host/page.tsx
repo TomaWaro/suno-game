@@ -42,6 +42,7 @@ export default function HostPage() {
   const [copied, setCopied] = useState(false);
   const [joinUrl, setJoinUrl] = useState<string>('');
   const [showLargeQr, setShowLargeQr] = useState<boolean>(false);
+  const [roundStartedAt, setRoundStartedAt] = useState<number | undefined>(undefined);
 
   // Kahoot-style Suspense & Podium states
   const [isSuspense, setIsSuspense] = useState<boolean>(false);
@@ -70,6 +71,7 @@ export default function HostPage() {
     setCurrentRoundIdx(data.currentRoundIdx || 0);
     setScores(data.scores || {});
     setCurrentRoundVotesCount(data.currentRoundVotesCount || 0);
+    setRoundStartedAt(data.roundStartedAt);
   };
 
   // Sync displayScores when not animating
@@ -257,14 +259,24 @@ export default function HostPage() {
 
     const steps: PlayerPoints[][] = [];
 
-    // 1. Guesser points (500 pts)
+    // 1. Guesser points (Time-based decay: up to 1000 pts down to 500 pts over 30s)
     const guesserPoints: PlayerPoints[] = [];
     roundVotes.forEach((v) => {
       if (v.guess === creator) {
+        let earnedPoints = 500;
+        let speedReason = '🎯 Bonne réponse !';
+
+        if (roundStartedAt && v.createdAt) {
+          const elapsedSeconds = Math.max(0, (v.createdAt - roundStartedAt) / 1000);
+          // Decays from 1000 to 500 over 30 seconds
+          earnedPoints = Math.max(500, Math.round(1000 - elapsedSeconds * 16.67));
+          speedReason = `🎯 Bonne réponse en ${elapsedSeconds.toFixed(1)}s !`;
+        }
+
         guesserPoints.push({
           nickname: v.voter,
-          points: 500,
-          reason: '🎯 Bonne réponse !',
+          points: earnedPoints,
+          reason: speedReason,
         });
       }
     });

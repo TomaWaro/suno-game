@@ -11,6 +11,7 @@ export interface Vote {
   guess: string;
   rating: number; // 1-5 stars
   roundIdx: number;
+  createdAt?: number;
 }
 
 export interface ScoreState {

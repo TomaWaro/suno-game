@@ -25,6 +25,7 @@ export async function POST(request: Request) {
       guess: guess || '',
       rating: rating || 0,
       roundIdx,
+      createdAt: Date.now(),
     });
 
     await kv.set(roomKey, state);
