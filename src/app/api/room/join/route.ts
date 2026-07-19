@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { kv } from '@/lib/kv';
+import { runTransaction } from '@/lib/kv';
 import { RoomState } from '../state/route';
 
 export async function POST(request: Request) {
@@ -12,7 +12,6 @@ export async function POST(request: Request) {
     }
 
     const roomKey = `room:${roomCode.toUpperCase()}`;
-    let state = await kv.get<RoomState>(roomKey);
 
     // Host initialization
     if (isHost) {
@@ -20,6 +19,8 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Host ID is missing' }, { status: 400 });
       }
       
+      const { kv } = await import('@/lib/kv');
+      let state = await kv.get<RoomState>(roomKey);
       if (!state) {
         state = {
           roomCode: roomCode.toUpperCase(),
@@ -38,26 +39,23 @@ export async function POST(request: Request) {
     }
 
     // Player joining
-    if (!state) {
-      return NextResponse.json({ error: 'Game lobby not found' }, { status: 404 });
-    }
-
     if (!nickname) {
       return NextResponse.json({ error: 'Nickname is missing' }, { status: 400 });
     }
 
     const trimmedNickname = nickname.trim();
-    if (state.players.includes(trimmedNickname)) {
-      // Re-joining with same name is allowed
-      return NextResponse.json(state);
-    }
 
-    state.players.push(trimmedNickname);
-    await kv.set(roomKey, state);
+    // Atomic update of lobby players
+    const updatedState = await runTransaction<RoomState, RoomState>(roomKey, (state) => {
+      if (!state.players.includes(trimmedNickname)) {
+        state.players.push(trimmedNickname);
+      }
+      return state;
+    });
 
-    return NextResponse.json(state);
+    return NextResponse.json(updatedState);
   } catch (e: any) {
     console.error('Join API Error:', e);
-    return NextResponse.json({ error: e.message || 'Invalid payload' }, { status: 400 });
+    return NextResponse.json({ error: e.message || 'Room not found' }, { status: 400 });
   }
 }

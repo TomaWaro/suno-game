@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { kv } from '@/lib/kv';
+import { runTransaction } from '@/lib/kv';
 import { RoomState } from '../state/route';
 import { parseSunoUrl } from '@/lib/sunoUtils';
 
@@ -14,11 +14,6 @@ export async function POST(request: Request) {
 
     const trimmedNickname = nickname.trim();
     const roomKey = `room:${roomCode.toUpperCase()}`;
-    const state = await kv.get<RoomState>(roomKey);
-
-    if (!state) {
-      return NextResponse.json({ error: 'Room not found' }, { status: 404 });
-    }
 
     let resolvedUrl = sunoUrl;
     
@@ -43,20 +38,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Lien Suno invalide' }, { status: 400 });
     }
 
-    // Filter duplicates to prevent multiple submissions by same player
-    state.submissions = state.submissions.filter((s) => s.nickname !== trimmedNickname);
-    state.submissions.push({
-      nickname: trimmedNickname,
-      title: title || 'Sans titre',
-      sunoUrl: embedUrl,
+    // Atomic update of submissions and readyPlayers
+    const updatedState = await runTransaction<RoomState, RoomState>(roomKey, (state) => {
+      // Filter duplicates to prevent multiple submissions by same player
+      state.submissions = state.submissions.filter((s) => s.nickname !== trimmedNickname);
+      state.submissions.push({
+        nickname: trimmedNickname,
+        title: title || 'Sans titre',
+        sunoUrl: embedUrl,
+      });
+
+      if (!state.readyPlayers.includes(trimmedNickname)) {
+        state.readyPlayers.push(trimmedNickname);
+      }
+
+      return state;
     });
 
-    if (!state.readyPlayers.includes(trimmedNickname)) {
-      state.readyPlayers.push(trimmedNickname);
-    }
-
-    await kv.set(roomKey, state);
-    return NextResponse.json(state);
+    return NextResponse.json(updatedState);
   } catch (e: any) {
     console.error('Submit API Error:', e);
     return NextResponse.json({ error: e.message || 'Invalid payload' }, { status: 400 });

@@ -124,3 +124,60 @@ if (!isProdKV && !isVercel && !isTcpRedis) {
 }
 
 export const kv = isTcpRedis ? tcpKv : (isProdKV ? vercelKv : mockKv);
+
+export async function runTransaction<TState, TResult = void>(
+  key: string,
+  updater: (state: TState) => TResult | Promise<TResult>
+): Promise<TResult> {
+  const lockKey = `lock:${key}`;
+  
+  // Acquire lock with spin-lock retry
+  let acquired = false;
+  const maxRetries = 100; // 100 retries * 30ms = 3.0s max
+  for (let i = 0; i < maxRetries; i++) {
+    let success = false;
+    if (isTcpRedis) {
+      const res = await tcpKvClient.set(lockKey, '1', 'EX', 5, 'NX');
+      success = (res === 'OK');
+    } else if (isProdKV) {
+      const res = await vercelKv.set(lockKey, '1', { nx: true, ex: 5 });
+      success = (res === 'OK');
+    } else {
+      if (!inMemoryStore[lockKey]) {
+        inMemoryStore[lockKey] = '1';
+        saveMockData();
+        success = true;
+      }
+    }
+    
+    if (success) {
+      acquired = true;
+      break;
+    }
+    
+    await new Promise((resolve) => setTimeout(resolve, 30));
+  }
+  
+  if (!acquired) {
+    throw new Error('Lock acquisition timeout');
+  }
+  
+  try {
+    const state = await kv.get<TState>(key);
+    if (!state) {
+      throw new Error('State key not found');
+    }
+    const result = await updater(state);
+    await kv.set(key, state);
+    return result;
+  } finally {
+    if (isTcpRedis) {
+      await tcpKvClient.del(lockKey);
+    } else if (isProdKV) {
+      await vercelKv.del(lockKey);
+    } else {
+      delete inMemoryStore[lockKey];
+      saveMockData();
+    }
+  }
+}
