@@ -229,8 +229,8 @@ export default function HostPage() {
 
   const startSuspenseReveal = () => {
     setIsSuspense(true);
-    let duration = 3000;
-    let intervalTime = 100;
+    const duration = 3000;
+    const intervalTime = 100;
 
     const interval = setInterval(() => {
       if (players.length > 0) {
@@ -374,14 +374,10 @@ export default function HostPage() {
     .map((nickname) => ({ nickname, score: scores[nickname] }))
     .sort((a, b) => b.score - a.score);
 
-  let lastRank = 1;
   const sortedLeaderboard = rawSortedLeaderboard.map((item, idx) => {
-    let rank = idx + 1;
-    if (idx > 0 && item.score === rawSortedLeaderboard[idx - 1].score) {
-      rank = lastRank;
-    } else {
-      lastRank = rank;
-    }
+    // Find the first index with the same score to handle ex-aequo ranks correctly and functionally
+    const firstSameScoreIdx = rawSortedLeaderboard.findIndex((x) => x.score === item.score);
+    const rank = firstSameScoreIdx !== -1 ? firstSameScoreIdx + 1 : idx + 1;
     return { ...item, rank };
   });
 
@@ -642,7 +638,7 @@ export default function HostPage() {
                   onClick={startRevealPhase}
                   className="btn-neon w-full py-4 text-base font-black uppercase tracking-wider animate-pulse-glow"
                 >
-                  Terminer l'écoute & passer aux révélations
+                  Terminer l&apos;écoute & passer aux révélations
                 </button>
               )}
             </div>
@@ -694,7 +690,7 @@ export default function HostPage() {
                   </>
                 ) : (
                   <>
-                    <h1 className="text-4xl font-black text-white mb-2 text-center">C'était le morceau de...</h1>
+                    <h1 className="text-4xl font-black text-white mb-2 text-center">C&apos;était le morceau de...</h1>
                     <h2 className="text-6xl font-black text-[hsl(var(--primary))] animate-pulse mb-8 text-center font-headings">
                       {submissions[currentRoundIdx].nickname}
                     </h2>
