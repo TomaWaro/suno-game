@@ -811,9 +811,9 @@ export default function HostPage() {
                     )}
 
                     {/* Hit Parade Kart Race Mini-Track */}
-                    <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
-                      <h4 className="font-bold text-lg text-white mb-4">🎧 Score en direct</h4>
-                      <div className="flex flex-col gap-6 w-full">
+                    <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 pt-8 pb-8 mb-6">
+                      <h4 className="font-extrabold text-xl text-white mb-10 border-b border-white/10 pb-3">🎧 Score en direct</h4>
+                      <div className="flex flex-col gap-10 w-full">
                         {players.map((nickname, idx) => {
                           const score = scores[nickname] || 0;
                           const maxScore = Math.max(2000, ...(Object.values(scores) as number[]));
